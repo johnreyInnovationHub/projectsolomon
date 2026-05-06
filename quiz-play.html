@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Project Solomon — Quest Mode</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Nunito','Segoe UI',sans-serif;background:#0d0618;color:#fffde7;min-height:100vh;overflow-x:hidden;}
+    .hidden{display:none!important;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes xpRise{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    @keyframes flap{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-18px) rotate(5deg)}}
+    @keyframes twinkle{0%,100%{opacity:.2;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
+    @keyframes birdFlap{0%,100%{transform:scaleY(1)}50%{transform:scaleY(0.85)}}
+    @keyframes obstacleMove{from{right:-120px}to{right:110%}}
+    @keyframes powerupFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+    @keyframes showdownPulse{0%,100%{box-shadow:0 0 20px rgba(255,105,180,.4)}50%{box-shadow:0 0 50px rgba(255,105,180,.8)}}
+    @keyframes countdownAnim{0%{transform:scale(0.5);opacity:0}50%{transform:scale(1.2);opacity:1}100%{transform:scale(1);opacity:0.8}}
+
+    /* ══ BACKGROUND ══ */
+    #ooo-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+    .ooo-star{position:absolute;border-radius:50%;background:white;animation:twinkle linear infinite;}
+
+    /* ══ LOADING ══ */
+    #loading-screen{position:fixed;inset:0;background:#0d0618;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;}
+    .spinner{width:50px;height:50px;border:4px solid rgba(0,170,255,.2);border-top-color:#00aaff;border-radius:50%;animation:spin .8s linear infinite;}
+
+    /* ══ TOAST ══ */
+    #global-toast{position:fixed;bottom:2rem;right:2rem;background:rgba(26,10,46,.98);border:2px solid #00aaff;border-radius:14px;padding:1rem 1.5rem;color:#fffde7;font-size:.9rem;font-weight:700;z-index:9999;transform:translateX(120%);transition:transform .4s cubic-bezier(.34,1.56,.64,1);max-width:300px;}
+    #global-toast.show{transform:translateX(0);}
+    #global-toast.error{border-color:#ff4444;}
+    #global-toast.success{border-color:#00d4aa;}
+
+    /* ══ ANTI-CHEAT ══ */
+    #ac-overlay{position:fixed;inset:0;z-index:99999;background:rgba(6,0,20,.96);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(20px);}
+    #ac-overlay.hidden{display:none;}
+    .ac-box{text-align:center;padding:3rem 2.5rem;background:rgba(26,10,46,.95);border:2px solid #ff4444;border-radius:24px;max-width:380px;}
+    .ac-box h2{font-family:'Fredoka One',cursive;font-size:2rem;color:#ff4444;margin:.5rem 0;}
+    .ac-box p{color:#c9b8e8;font-size:.9rem;margin-bottom:1.5rem;line-height:1.6;}
+    .ac-resume-btn{background:linear-gradient(135deg,#ffd700,#ff8c00);color:#1a0a2e;border:none;padding:.8rem 2rem;border-radius:50px;font-weight:900;cursor:pointer;font-family:'Fredoka One',cursive;font-size:1.1rem;}
+
+    /* ══ SHARED QUIZ HEADER ══ */
+    .quiz-header{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.5rem;background:rgba(13,6,24,.95);border-bottom:2px solid rgba(0,170,255,.2);backdrop-filter:blur(20px);position:sticky;top:0;z-index:50;gap:.75rem;flex-wrap:wrap;}
+    .exit-btn{padding:.4rem 1rem;border-radius:50px;border:2px solid rgba(255,68,68,.4);background:rgba(255,68,68,.1);color:#ff6666;font-family:'Nunito',sans-serif;font-size:.82rem;font-weight:800;cursor:pointer;white-space:nowrap;}
+    .exit-btn:hover{background:rgba(255,68,68,.25);}
+    .quiz-title-small{font-family:'Fredoka One',cursive;font-size:.95rem;letter-spacing:.04em;color:#fffde7;flex:1;text-align:center;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .mode-badge{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .75rem;border-radius:50px;font-size:.72rem;font-weight:800;letter-spacing:.08em;white-space:nowrap;}
+    .tab-badge{display:none;padding:.2rem .6rem;border-radius:50px;font-family:'Space Mono',monospace;font-size:.68rem;color:#ff4444;background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.3);}
+    .tab-badge.show{display:inline-block;}
+    .timer-pill{font-family:'Space Mono',monospace;font-size:1rem;padding:.35rem .9rem;border-radius:50px;background:rgba(0,170,255,.1);border:2px solid rgba(0,170,255,.3);color:#00aaff;white-space:nowrap;}
+    .timer-pill.warn{color:#ffd700;border-color:rgba(255,215,0,.4);background:rgba(255,215,0,.08);}
+    .timer-pill.danger{color:#ff4444;border-color:rgba(255,68,68,.4);background:rgba(255,68,68,.08);animation:pulse .5s infinite;}
+
+    /* ══ PROGRESS DOTS ══ */
+    .q-dots-bar{display:flex;gap:5px;flex-wrap:wrap;max-width:280px;padding:.5rem 1.5rem;}
+    .q-dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.12);transition:all .3s;}
+    .q-dot.done{background:#00d4aa;}
+    .q-dot.current{background:#00aaff;box-shadow:0 0 8px #00aaff;}
+
+    /* ══ XP FLASH ══ */
+    .xp-flash{position:fixed;top:80px;right:2rem;font-family:'Fredoka One',cursive;font-size:1.4rem;color:#00d4aa;text-shadow:0 0 10px rgba(0,212,170,.8);pointer-events:none;z-index:9998;animation:xpRise 1.2s ease forwards;}
+
+    /* ══════════════════════════════════════════
+       ADVENTURE MODE (Lessons) — dark purple calm
+    ══════════════════════════════════════════ */
+    #adventure-screen{position:relative;z-index:1;}
+    #adventure-screen .quiz-body{max-width:680px;margin:2.5rem auto;padding:0 1.5rem 4rem;animation:fadeIn .4s ease;}
+    .q-num{font-family:'Space Mono',monospace;font-size:.72rem;letter-spacing:.2em;color:#7a6090;margin-bottom:.75rem;}
+    .question-card{background:rgba(74,14,143,.22);border:2px solid rgba(0,170,255,.22);border-radius:20px;padding:2.5rem;margin-bottom:1.5rem;}
+    .question-text{font-size:1.15rem;font-weight:700;line-height:1.65;color:#fffde7;}
+    .answer-opts{display:flex;flex-direction:column;gap:.75rem;margin-top:1.5rem;}
+    .answer-opt{padding:1rem 1.5rem;border-radius:14px;border:2px solid rgba(0,170,255,.2);background:rgba(0,0,0,.3);color:#fffde7;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:700;text-align:left;cursor:pointer;transition:all .2s;}
+    .answer-opt:hover:not(:disabled){border-color:#00aaff;background:rgba(0,170,255,.08);transform:translateX(4px);}
+    .answer-opt.correct{border-color:#00d4aa!important;background:rgba(0,212,170,.12)!important;color:#00d4aa;}
+    .answer-opt.wrong{border-color:#ff4444!important;background:rgba(255,68,68,.1)!important;color:#ff6666;}
+    .answer-opt.selected-assessment{border-color:#ff69b4!important;background:rgba(255,105,180,.1)!important;}
+    .answer-opt:disabled{cursor:not-allowed;}
+    .answer-feedback{padding:.75rem 1rem;border-radius:10px;margin-top:.75rem;font-size:.88rem;font-weight:700;display:none;}
+    .next-btn{background:linear-gradient(135deg,#00aaff,#0055aa);color:white;border:none;padding:.85rem 2rem;border-radius:50px;font-family:'Fredoka One',cursive;font-size:1.05rem;cursor:pointer;margin-top:1rem;display:none;box-shadow:0 4px 20px rgba(0,170,255,.4);width:100%;}
+    .next-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,170,255,.6);}
+    .score-live{font-family:'Space Mono',monospace;font-size:.75rem;color:#7a6090;text-align:right;margin-bottom:.5rem;}
+
+    /* ══════════════════════════════════════════
+       TRAINING CAMP — FLAPPY BIRD STYLE
+    ══════════════════════════════════════════ */
+    #training-screen{position:relative;z-index:1;min-height:100vh;}
+    #flappy-canvas-area{position:relative;width:100%;height:220px;background:linear-gradient(180deg,#0a1628 0%,#0d2144 60%,#1a3a1a 100%);overflow:hidden;border-bottom:3px solid #2a5a2a;cursor:pointer;user-select:none;}
+    .flappy-ground{position:absolute;bottom:0;left:0;right:0;height:28px;background:linear-gradient(180deg,#3a7a1a,#2a5a10);border-top:3px solid #4a9a20;}
+    #flappy-bird{position:absolute;left:80px;width:44px;height:34px;border-radius:8px;background:linear-gradient(135deg,#00aaff,#0055aa);border:2px solid #00d4aa;display:flex;align-items:center;justify-content:center;font-size:1.4rem;transition:top .06s linear;z-index:10;}
+    .obstacle{position:absolute;width:60px;background:linear-gradient(180deg,#00d4aa,#00a080);border-radius:6px;border:2px solid #00f0b0;z-index:5;}
+    .powerup{position:absolute;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;animation:powerupFloat 2s ease-in-out infinite;z-index:6;cursor:pointer;}
+    .powerup.speed{background:rgba(255,215,0,.25);border:2px solid #ffd700;}
+    .powerup.shield{background:rgba(0,170,255,.25);border:2px solid #00aaff;}
+    #flappy-question-panel{background:rgba(13,6,24,.95);border-top:2px solid rgba(0,212,170,.3);padding:1.2rem 1.5rem;}
+    #flappy-question-text{font-size:1rem;font-weight:800;color:#fffde7;margin-bottom:1rem;line-height:1.5;}
+    #flappy-answers{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
+    .flappy-opt{padding:.65rem 1rem;border-radius:12px;border:2px solid rgba(0,212,170,.25);background:rgba(0,0,0,.4);color:#fffde7;font-family:'Nunito',sans-serif;font-size:.85rem;font-weight:800;text-align:left;cursor:pointer;transition:all .2s;}
+    .flappy-opt:hover:not(:disabled){border-color:#00d4aa;background:rgba(0,212,170,.1);transform:scale(1.02);}
+    .flappy-opt.correct{border-color:#00d4aa!important;background:rgba(0,212,170,.2)!important;color:#00d4aa;}
+    .flappy-opt.wrong{border-color:#ff4444!important;background:rgba(255,68,68,.15)!important;color:#ff6666;}
+    .flappy-opt:disabled{cursor:not-allowed;}
+    #flappy-stats{display:flex;align-items:center;gap:1rem;padding:.6rem 1.5rem;background:rgba(0,0,0,.5);border-top:1px solid rgba(0,212,170,.15);flex-wrap:wrap;}
+    .flappy-stat{font-family:'Space Mono',monospace;font-size:.7rem;color:#7a6090;}
+    .flappy-stat span{color:#00d4aa;font-weight:700;}
+    #bird-message{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Fredoka One',cursive;font-size:1.4rem;color:#ffd700;text-shadow:0 0 20px rgba(255,215,0,.8);pointer-events:none;opacity:0;transition:opacity .3s;z-index:20;}
+    #tap-hint{position:absolute;bottom:50px;left:50%;transform:translateX(-50%);font-family:'Fredoka One',cursive;font-size:.9rem;color:#00d4aa;animation:pulse 1.5s infinite;text-shadow:0 0 10px rgba(0,212,170,.6);}
+
+    /* ══════════════════════════════════════════
+       ARENA MODE — GAME SHOW SHOWDOWN
+    ══════════════════════════════════════════ */
+    #arena-screen{position:relative;z-index:1;min-height:100vh;}
+    #arena-stage{background:linear-gradient(180deg,rgba(80,0,40,.95),rgba(26,10,46,.98));border-bottom:3px solid rgba(255,105,180,.4);padding:1.5rem;text-align:center;position:relative;overflow:hidden;}
+    #arena-stage::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(255,105,180,.15),transparent 70%);pointer-events:none;}
+    #arena-question-num{font-family:'Space Mono',monospace;font-size:.7rem;letter-spacing:.25em;color:#ff69b4;margin-bottom:.5rem;}
+    #arena-question-text{font-family:'Fredoka One',cursive;font-size:clamp(1.1rem,3vw,1.6rem);letter-spacing:.02em;color:#fffde7;line-height:1.4;max-width:700px;margin:0 auto;}
+    #arena-timer-bar-wrap{height:6px;background:rgba(0,0,0,.4);border-radius:3px;margin-top:1.25rem;max-width:500px;margin-left:auto;margin-right:auto;overflow:hidden;}
+    #arena-timer-bar{height:100%;background:linear-gradient(90deg,#ff69b4,#ffd700);border-radius:3px;transition:width 1s linear;}
+    #arena-answers{display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:700px;margin:1.5rem auto;padding:0 1.5rem;}
+    .arena-opt{padding:1.1rem 1.25rem;border-radius:16px;border:2px solid rgba(255,105,180,.25);background:rgba(80,0,40,.5);color:#fffde7;font-family:'Fredoka One',cursive;font-size:1rem;letter-spacing:.03em;text-align:left;cursor:pointer;transition:all .25s;display:flex;align-items:center;gap:.75rem;}
+    .arena-opt:hover:not(:disabled){border-color:#ff69b4;background:rgba(255,105,180,.15);transform:scale(1.03);}
+    .arena-opt .opt-letter{width:32px;height:32px;border-radius:50%;background:rgba(255,105,180,.2);border:2px solid rgba(255,105,180,.4);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;}
+    .arena-opt.correct{border-color:#00d4aa!important;background:rgba(0,212,170,.15)!important;animation:showdownPulse .5s ease;}
+    .arena-opt.wrong{border-color:#ff4444!important;background:rgba(255,68,68,.1)!important;opacity:.7;}
+    .arena-opt.selected-assessment{border-color:#ffd700!important;background:rgba(255,215,0,.1)!important;}
+    .arena-opt:disabled{cursor:not-allowed;}
+    #arena-next-btn{background:linear-gradient(135deg,#ff69b4,#cc0055);color:white;border:none;padding:.85rem 2.5rem;border-radius:50px;font-family:'Fredoka One',cursive;font-size:1.1rem;cursor:pointer;margin:0 auto;display:none;box-shadow:0 4px 20px rgba(255,105,180,.5);}
+    #arena-next-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(255,105,180,.7);}
+    #arena-bottom{text-align:center;padding-bottom:2rem;}
+    #arena-countdown{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;flex-direction:column;}
+    #arena-countdown-num{font-family:'Fredoka One',cursive;font-size:8rem;color:#ffd700;text-shadow:0 0 40px rgba(255,215,0,.8);animation:countdownAnim 1s ease infinite;}
+    #arena-countdown p{font-family:'Fredoka One',cursive;font-size:1.5rem;color:#fffde7;margin-top:1rem;}
+    .arena-buzz{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Fredoka One',cursive;font-size:2rem;pointer-events:none;z-index:200;animation:xpRise 1s ease forwards;}
+
+    /* ══ RESULT SCREEN ══ */
+    #result-screen{position:relative;z-index:1;}
+    .result-wrap{max-width:580px;margin:3rem auto;padding:0 1.5rem 4rem;text-align:center;animation:fadeIn .5s ease;}
+    .result-circle{width:140px;height:140px;border-radius:50%;margin:0 auto 1.5rem;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:2.2rem;}
+    .result-title{font-family:'Fredoka One',cursive;font-size:1.8rem;margin-bottom:.5rem;}
+    .result-sub{color:#c9b8e8;font-size:.9rem;font-weight:700;margin-bottom:1.5rem;}
+    .result-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;}
+    .result-stat-card{background:rgba(74,14,143,.22);border:2px solid rgba(0,170,255,.22);border-radius:16px;padding:1rem;}
+    .result-stat-val{font-family:'Fredoka One',cursive;font-size:1.8rem;color:#00aaff;}
+    .result-stat-lbl{font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#7a6090;margin-top:.2rem;}
+    .loot-notice{background:rgba(255,215,0,.08);border:2px solid rgba(255,215,0,.3);border-radius:14px;padding:1rem;margin-bottom:1rem;font-family:'Fredoka One',cursive;font-size:1rem;color:#ffd700;}
+    .tab-warning{color:#ff6666;font-size:.82rem;font-weight:700;margin-bottom:.75rem;padding:.5rem;background:rgba(255,68,68,.08);border-radius:8px;display:none;}
+    .review-section{text-align:left;margin-top:1.5rem;}
+    .review-item{background:rgba(0,0,0,.25);border-radius:10px;padding:.85rem;margin-bottom:.5rem;}
+    .home-btn{background:linear-gradient(135deg,#00aaff,#0055aa);color:white;border:none;padding:.85rem 2rem;border-radius:50px;font-family:'Fredoka One',cursive;font-size:1.05rem;cursor:pointer;box-shadow:0 4px 20px rgba(0,170,255,.4);width:100%;}
+    .home-btn:hover{transform:translateY(-2px);}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div id="ooo-bg"></div>
+<div id="global-toast"></div>
+
+<!-- LOADING -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <p style="font-family:'Fredoka One',cursive;font-size:1.1rem;color:#c9b8e8;">Loading quest...</p>
+</div>
+
+<!-- ANTI-CHEAT -->
+<div id="ac-overlay" class="hidden">
+  <div class="ac-box">
+    <div style="font-size:3rem;margin-bottom:.5rem;">⚠️</div>
+    <h2>Focus Lost!</h2>
+    <p>You switched tabs or left the window.<br>This incident has been recorded and logged to your teacher.</p>
+    <button class="ac-resume-btn" onclick="resumeQuiz()">Return to Quest</button>
+  </div>
+</div>
+
+<!-- ══ ADVENTURE QUIZ SCREEN ══ -->
+<div id="adventure-screen" class="hidden">
+  <div class="quiz-header">
+    <button class="exit-btn" onclick="confirmExit()">✕ Exit</button>
+    <div class="quiz-title-small" id="adv-title-small"></div>
+    <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0;">
+      <span class="mode-badge" id="adv-mode-badge" style="background:rgba(0,170,255,.15);color:#00aaff;border:1px solid rgba(0,170,255,.3);">🗺️ ADVENTURE</span>
+      <span class="tab-badge" id="adv-tab-badge">0 switch(es)</span>
+      <span class="score-live" id="adv-score-live" style="font-family:'Space Mono',monospace;font-size:.75rem;color:#7a6090;"></span>
+      <span class="timer-pill" id="adv-timer">--:--</span>
+    </div>
+  </div>
+  <div class="q-dots-bar" id="adv-dots"></div>
+  <div id="adventure-screen" class="quiz-body" style="position:static;">
+    <div class="score-live" id="adv-score-live2"></div>
+    <div class="question-card">
+      <div class="q-num" id="adv-q-num"></div>
+      <div class="question-text" id="adv-question-text"></div>
+      <div class="answer-opts" id="adv-answer-opts"></div>
+      <div class="answer-feedback" id="adv-feedback"></div>
+    </div>
+    <button class="next-btn" id="adv-next-btn" onclick="advNext()">Next →</button>
+  </div>
+</div>
+
+<!-- ══ TRAINING CAMP (FLAPPY BIRD) SCREEN ══ -->
+<div id="training-screen" class="hidden">
+  <div class="quiz-header">
+    <button class="exit-btn" onclick="confirmExit()">✕ Exit</button>
+    <div class="quiz-title-small" id="tc-title-small"></div>
+    <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0;">
+      <span class="mode-badge" style="background:rgba(255,215,0,.15);color:#ffd700;border:1px solid rgba(255,215,0,.3);">🐦 TRAINING CAMP</span>
+      <span class="tab-badge" id="tc-tab-badge">0 switch(es)</span>
+      <span class="timer-pill" id="tc-timer">--:--</span>
+    </div>
+  </div>
+
+  <!-- Flappy Bird Canvas -->
+  <div id="flappy-canvas-area" onclick="flapBird()">
+    <div id="flappy-bird">🐦</div>
+    <div class="flappy-ground"></div>
+    <div id="bird-message"></div>
+    <div id="tap-hint">TAP TO FLAP! 🐦</div>
+  </div>
+
+  <div id="flappy-stats">
+    <div class="flappy-stat">Score: <span id="tc-score">0</span></div>
+    <div class="flappy-stat">XP: <span id="tc-xp">0</span></div>
+    <div class="flappy-stat">Streak: <span id="tc-streak">0</span></div>
+    <div class="flappy-stat">Power-ups: <span id="tc-powerups">0</span></div>
+    <div class="flappy-stat" style="margin-left:auto;">Q <span id="tc-q-progress">1/1</span></div>
+  </div>
+
+  <div id="flappy-question-panel">
+    <div id="flappy-question-text"></div>
+    <div id="flappy-answers"></div>
+  </div>
+</div>
+
+<!-- ══ ARENA (GAME SHOW) SCREEN ══ -->
+<div id="arena-screen" class="hidden">
+  <div class="quiz-header">
+    <button class="exit-btn" onclick="confirmExit()">✕ Exit</button>
+    <div class="quiz-title-small" id="arena-title-small"></div>
+    <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0;">
+      <span class="mode-badge" style="background:rgba(255,105,180,.15);color:#ff69b4;border:1px solid rgba(255,105,180,.3);">🏟️ ARENA</span>
+      <span class="tab-badge" id="arena-tab-badge">0 switch(es)</span>
+      <span class="timer-pill" id="arena-timer">--:--</span>
+    </div>
+  </div>
+
+  <!-- Countdown overlay -->
+  <div id="arena-countdown">
+    <div id="arena-countdown-num">3</div>
+    <p>Get ready for the showdown!</p>
+  </div>
+
+  <div id="arena-stage">
+    <div id="arena-question-num"></div>
+    <div id="arena-question-text"></div>
+    <div id="arena-timer-bar-wrap"><div id="arena-timer-bar" style="width:100%"></div></div>
+  </div>
+  <div id="arena-answers"></div>
+  <div id="arena-bottom">
+    <button id="arena-next-btn" onclick="arenaNext()">Next Round →</button>
+  </div>
+</div>
+
+<!-- ══ RESULT SCREEN ══ -->
+<div id="result-screen" class="hidden">
+  <div class="result-wrap">
+    <div class="result-circle" id="result-circle"></div>
+    <div class="result-title" id="result-title"></div>
+    <div class="result-sub" id="result-sub"></div>
+    <div class="loot-notice hidden" id="loot-notice">🎁 PERFECT SCORE! You earned a Loot Bag!</div>
+    <div class="tab-warning" id="tab-warning"></div>
+    <div class="result-stats">
+      <div class="result-stat-card"><div class="result-stat-val" id="r-score"></div><div class="result-stat-lbl">Score</div></div>
+      <div class="result-stat-card"><div class="result-stat-val" id="r-pct"></div><div class="result-stat-lbl">Percent</div></div>
+      <div class="result-stat-card"><div class="result-stat-val" id="r-xp" style="color:#ffd700;"></div><div class="result-stat-lbl">XP Earned</div></div>
+    </div>
+    <div class="review-section" id="review-section"></div>
+    <button class="home-btn" style="margin-top:1.5rem;" onclick="goHome()">⚔️ Back to Hero Portal</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/app.js"></script>
+<script>
+/* ══ BACKGROUND ══ */
+(function(){
+  const bg=document.getElementById('ooo-bg');
+  bg.style.cssText='position:fixed;inset:0;background:linear-gradient(180deg,#0d0618 0%,#1a0a2e 40%,#0f1a3d 70%,#0a0020 100%);z-index:0;overflow:hidden;pointer-events:none;';
+  for(let i=0;i<150;i++){const s=document.createElement('div');s.className='ooo-star';const sz=Math.random()*2+0.4;s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-duration:${Math.random()*4+2}s;animation-delay:${Math.random()*6}s;opacity:${Math.random()*.5+.1};`;bg.appendChild(s);}
+})();
+
+/* ══ TOAST ══ */
+let _tt;
+function showToast(msg,type='info'){const t=document.getElementById('global-toast');t.textContent=msg;t.className=`show ${type}`;clearTimeout(_tt);_tt=setTimeout(()=>t.className='',3500);}
+
+/* ══ APP.JS EMBEDDED ══ */
+const SESSION_KEY='solomon_session';
+function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch{return null;}}
+function setSession(data){localStorage.setItem(SESSION_KEY,JSON.stringify(data));}
+function clearSession(){localStorage.removeItem(SESSION_KEY);}
+localStorage.removeItem('solomon_teacher_pw');
+localStorage.setItem('solomon_teacher_pw','solomonwisdom');
+
+/* ══ API functions from js/app.js ══ */catch{q.questions=[];}}
+  if(!Array.isArray(q.questions))q.questions=[];
+  // Normalize each question's correct index to integer
+  q.questions=q.questions.map(qObj=>({
+    ...qObj,
+    correct: parseInt(qObj.correct)||0,
+    options: Array.isArray(qObj.options)?qObj.options:[]
+  }));
+  q.time=parseInt(q.time)||15;
+  q.category=q.category||'practice';
+  return q;
+}
+
+/* ══ STATE ══ */
+let quiz=null,student=null,currentQ=0,score=0,answers=[],timerInterval=null,secondsLeft=0;
+let tabCount=0,quizStarted=false,isPreview=false;
+
+/* ══ ANTI-CHEAT ══ */
+document.addEventListener('visibilitychange',()=>{
+  if(!quizStarted||isPreview)return;
+  if(document.hidden){
+    tabCount++;
+    document.querySelectorAll('.tab-badge').forEach(b=>{b.textContent=`⚠ ${tabCount} switch(es)`;b.classList.add('show');});
+    document.getElementById('ac-overlay').classList.remove('hidden');
+  }
+});
+function resumeQuiz(){document.getElementById('ac-overlay').classList.add('hidden');}
+
+/* ══ INIT ══ */
+async function init(){
+  const params=new URLSearchParams(window.location.search);
+  const id=params.get('id');isPreview=params.get('preview')==='1';
+  if(!id){showToast('No quiz ID found!','error');setTimeout(()=>window.location.href='student.html',2000);return;}
+  const sess=getSession();
+  if(!isPreview){
+    if(!sess||sess.role!=='student'){window.location.href='student.html';return;}
+    student=getCachedStudent(sess.email)||{email:sess.email,name:sess.name||'Hero',section:sess.section||'',xp:0,lootBags:0};
+  }
+  quiz=await fetchQuizById(id);
+
+  // Adventure/Lesson category → redirect to dedicated lesson viewer
+  if(quiz && (quiz.category==='adventure'||quiz.category==='lesson')){
+    // Store quiz info for the lesson viewer
+    sessionStorage.setItem('adventure_quiz_id', id);
+    sessionStorage.setItem('adventure_quiz_title', quiz.title||'Adventure Lesson');
+    window.location.href='adventure-lesson.html?id='+id+(isPreview?'&preview=1':'');
+    return;
+  }
+
+  if(!quiz||!quiz.questions||quiz.questions.length===0){
+    document.getElementById('loading-screen').innerHTML='<div style="text-align:center;padding:2rem;"><div style="font-size:3rem;margin-bottom:1rem;">😕</div><p style="font-family:\'Fredoka One\',cursive;font-size:1.3rem;color:#c9b8e8;">Quest not found or has no questions.</p><button onclick="goHome()" style="margin-top:1.5rem;background:linear-gradient(135deg,#00aaff,#0055aa);color:white;border:none;padding:.75rem 2rem;border-radius:50px;font-family:\'Fredoka One\',cursive;font-size:1rem;cursor:pointer;">← Back to Hero Portal</button></div>';
+    return;
+  }
+  secondsLeft=quiz.time*60;
+  document.getElementById('loading-screen').classList.add('hidden');
+  const cat=quiz.category||'practice';
+  if(cat==='training')startTrainingMode();
+  else if(cat==='assessment'||cat==='arena')startArenaMode();
+  else startAdventureMode();
+}
+
+/* ══════════════════════════════════════
+   ADVENTURE MODE
+══════════════════════════════════════ */
+function startAdventureMode(){
+  document.getElementById('adventure-screen').classList.remove('hidden');
+  document.getElementById('adv-title-small').textContent=quiz.title;
+  renderAdvDots();renderAdvQuestion();
+  quizStarted=true;startTimer('adv-timer');
+}
+function renderAdvDots(){
+  document.getElementById('adv-dots').innerHTML=quiz.questions.map((_,i)=>`<div class="q-dot ${i<currentQ?'done':i===currentQ?'current':''}" id="adot-${i}"></div>`).join('');
+}
+function renderAdvQuestion(){
+  const q=quiz.questions[currentQ];
+  const isAssessment=quiz.category==='assessment';
+  document.getElementById('adv-q-num').textContent=`QUESTION ${currentQ+1} OF ${quiz.questions.length}`;
+  document.getElementById('adv-question-text').textContent=q.question;
+  document.getElementById('adv-score-live').textContent=`${score}/${currentQ}`;
+  document.getElementById('adv-feedback').style.display='none';
+  document.getElementById('adv-next-btn').style.display='none';
+  document.getElementById('adv-answer-opts').innerHTML=q.options.map((o,i)=>
+    `<button class="answer-opt" onclick="advAnswer(${i})">${String.fromCharCode(65+i)}) ${o}</button>`
+  ).join('');
+  renderAdvDots();
+}
+function advAnswer(i){
+  const opts=document.querySelectorAll('.answer-opt');
+  if(opts[i].disabled)return;
+  opts.forEach(o=>o.disabled=true);
+  const q=quiz.questions[currentQ];
+  const correctIdx=parseInt(q.correct)||0;
+  const isAssessment=quiz.category==='assessment';
+  const isCorrect=i===correctIdx;
+  const fb=document.getElementById('adv-feedback');
+  if(isAssessment){
+    opts[i].classList.add('selected-assessment');
+    fb.style.cssText='display:block;padding:.6rem 1rem;border-radius:10px;background:rgba(255,105,180,.08);border-left:3px solid #ff69b4;color:#ff69b4;font-weight:700;';
+    fb.textContent='✓ Answer recorded.';
+  }else{
+    opts[i].classList.add(isCorrect?'correct':'wrong');
+    if(opts[correctIdx]) opts[correctIdx].classList.add('correct');
+    if(isCorrect){
+      fb.style.cssText='display:block;padding:.75rem 1rem;border-radius:10px;background:rgba(0,212,170,.08);border-left:3px solid #00d4aa;color:#00d4aa;font-weight:700;';
+      fb.textContent='✓ Correct! Excellence is a Habit!';
+      const xpEl=document.createElement('div');xpEl.className='xp-flash';xpEl.textContent='+XP ✨';document.body.appendChild(xpEl);setTimeout(()=>xpEl.remove(),1200);
+    }else{
+      fb.style.cssText='display:block;padding:.75rem 1rem;border-radius:10px;background:rgba(255,68,68,.08);border-left:3px solid #ff4444;color:#ff6666;font-weight:700;';
+      fb.textContent=`✗ Correct: ${String.fromCharCode(65+q.correct)}) ${q.options[q.correct]}`;
+    }
+  }
+  if(isCorrect)score++;
+  answers.push({question:q.question,selected:i,correct:q.correct,isCorrect});
+  document.getElementById(`adot-${currentQ}`).className='q-dot done';
+  const nb=document.getElementById('adv-next-btn');
+  nb.textContent=currentQ>=quiz.questions.length-1?'🏁 Finish Quest!':'Next Question →';
+  nb.style.display='block';
+}
+function advNext(){currentQ++;if(currentQ>=quiz.questions.length){finishQuiz();return;}renderAdvQuestion();}
+
+/* ══════════════════════════════════════
+   TRAINING CAMP — FLAPPY BIRD
+══════════════════════════════════════ */
+let birdY=80,birdVel=0,birdAlive=true,flappyActive=false,streak=0,powerupsCollected=0;
+let flappyAnimFrame=null,flappyAnswered=false,canFlap=false;
+const GRAVITY=0.35,FLAP_FORCE=-6,MAX_VEL=8;
+
+function startTrainingMode(){
+  document.getElementById('training-screen').classList.remove('hidden');
+  document.getElementById('tc-title-small').textContent=quiz.title;
+  document.getElementById('tap-hint').style.display='block';
+  renderFlappyQuestion();
+  quizStarted=true;startTimer('tc-timer');
+  // Start idle bird animation
+  birdY=80;updateBirdPos();
+  // Enable flapping after 1 second
+  setTimeout(()=>{canFlap=true;flappyActive=true;startFlappyLoop();},1000);
+}
+
+function flapBird(){
+  if(!canFlap)return;
+  if(!flappyActive)return;
+  document.getElementById('tap-hint').style.display='none';
+  birdVel=FLAP_FORCE;
+  const bird=document.getElementById('flappy-bird');
+  bird.style.transform='rotate(-20deg)';
+  setTimeout(()=>bird.style.transform='',200);
+}
+
+function startFlappyLoop(){
+  if(flappyAnimFrame)cancelAnimationFrame(flappyAnimFrame);
+  let lastTime=0;
+  function loop(ts){
+    if(!flappyActive){flappyAnimFrame=null;return;}
+    if(ts-lastTime>16){// ~60fps
+      birdVel=Math.min(birdVel+GRAVITY,MAX_VEL);
+      birdY+=birdVel;
+      const maxY=155;// ground
+      if(birdY<0)birdY=0;
+      if(birdY>maxY){birdY=maxY;}
+      updateBirdPos();
+      lastTime=ts;
+    }
+    flappyAnimFrame=requestAnimationFrame(loop);
+  }
+  flappyAnimFrame=requestAnimationFrame(loop);
+}
+
+function updateBirdPos(){
+  const bird=document.getElementById('flappy-bird');
+  bird.style.top=birdY+'px';
+}
+
+function renderFlappyQuestion(){
+  const q=quiz.questions[currentQ];
+  document.getElementById('flappy-question-text').textContent=`Q${currentQ+1}/${quiz.questions.length}: ${q.question}`;
+  document.getElementById('tc-q-progress').textContent=`${currentQ+1}/${quiz.questions.length}`;
+  flappyAnswered=false;
+  document.getElementById('flappy-answers').innerHTML=q.options.map((o,i)=>
+    `<button class="flappy-opt" onclick="flappyAnswer(${i})">${String.fromCharCode(65+i)}) ${o}</button>`
+  ).join('');
+}
+
+function flappyAnswer(i){
+  if(flappyAnswered)return;
+  flappyAnswered=true;
+  const q=quiz.questions[currentQ];
+  const isCorrect=i===q.correct;
+  const opts=document.querySelectorAll('.flappy-opt');
+  opts.forEach(o=>o.disabled=true);
+  opts[i].classList.add(isCorrect?'correct':'wrong');
+  if(!isCorrect)opts[q.correct].classList.add('correct');
+
+  if(isCorrect){
+    score++;streak++;
+    birdVel=FLAP_FORCE*2;
+    showBirdMsg('✓ CORRECT! +XP 🚀');
+    // Add power-up chance
+    if(Math.random()<0.4){spawnPowerup();}
+  }else{
+    streak=0;
+    // Bird drops as penalty
+    birdVel=MAX_VEL*0.6;
+    showBirdMsg('✗ Wrong!');
+  }
+  answers.push({question:q.question,selected:i,correct:q.correct,isCorrect});
+  document.getElementById('tc-score').textContent=score;
+  document.getElementById('tc-xp').textContent=Math.round((score/quiz.questions.length)*50);
+  document.getElementById('tc-streak').textContent=streak;
+
+  // Auto-advance after 1.8 seconds
+  setTimeout(()=>{
+    currentQ++;
+    if(currentQ>=quiz.questions.length){finishQuiz();return;}
+    renderFlappyQuestion();
+  },1800);
+}
+
+function showBirdMsg(msg){
+  const el=document.getElementById('bird-message');
+  el.textContent=msg;el.style.opacity='1';
+  setTimeout(()=>el.style.opacity='0',1200);
+}
+
+function spawnPowerup(){
+  powerupsCollected++;
+  document.getElementById('tc-powerups').textContent=powerupsCollected;
+  const canvas=document.getElementById('flappy-canvas-area');
+  const pu=document.createElement('div');
+  pu.className='powerup speed';
+  pu.textContent='⚡';
+  pu.style.right=(Math.random()*200+50)+'px';
+  pu.style.top=(Math.random()*100+20)+'px';
+  canvas.appendChild(pu);
+  setTimeout(()=>pu.remove(),3000);
+}
+
+/* ══════════════════════════════════════
+   ARENA MODE — GAME SHOW
+══════════════════════════════════════ */
+let arenaQuestionTimer=null,arenaSecondsPerQ=15;
+
+function startArenaMode(){
+  document.getElementById('arena-screen').classList.remove('hidden');
+  document.getElementById('arena-title-small').textContent=quiz.title;
+  arenaSecondsPerQ=Math.max(10,Math.floor(quiz.time*60/quiz.questions.length));
+  // Countdown then start
+  let cd=3;
+  const cdEl=document.getElementById('arena-countdown-num');
+  const cdInterval=setInterval(()=>{
+    cd--;
+    if(cd>0){cdEl.textContent=cd;}
+    else{
+      clearInterval(cdInterval);
+      document.getElementById('arena-countdown').classList.add('hidden');
+      quizStarted=true;
+      startTimer('arena-timer');
+      renderArenaQuestion();
+    }
+  },1000);
+}
+
+function renderArenaQuestion(){
+  const q=quiz.questions[currentQ];
+  const isAssessment=quiz.category==='assessment';
+  document.getElementById('arena-question-num').textContent=`⚡ ROUND ${currentQ+1} OF ${quiz.questions.length}`;
+  document.getElementById('arena-question-text').textContent=q.question;
+  document.getElementById('arena-next-btn').style.display='none';
+
+  const correctIdx=parseInt(q.correct)||0;
+  document.getElementById('arena-answers').innerHTML=(q.options||[]).map((o,i)=>
+    `<button class="arena-opt" onclick="arenaAnswer(${i},${correctIdx})">
+       <span class="opt-letter">${String.fromCharCode(65+i)}</span>
+       <span>${o}</span>
+     </button>`
+  ).join('');
+
+  // Per-question countdown bar
+  clearInterval(arenaQuestionTimer);
+  let qSecs=arenaSecondsPerQ;
+  const bar=document.getElementById('arena-timer-bar');
+  bar.style.width='100%';
+  bar.style.background='linear-gradient(90deg,#ff69b4,#ffd700)';
+  arenaQuestionTimer=setInterval(()=>{
+    qSecs--;
+    const pct=Math.max(0,(qSecs/arenaSecondsPerQ)*100);
+    bar.style.width=pct+'%';
+    if(pct<30)bar.style.background='linear-gradient(90deg,#ff4444,#ff6600)';
+    if(qSecs<=0){clearInterval(arenaQuestionTimer);autoArenaAnswer();}
+  },1000);
+}
+
+function autoArenaAnswer(){
+  // Time's up — count as wrong (score not incremented)
+  const opts=document.querySelectorAll('.arena-opt');
+  opts.forEach(o=>o.disabled=true);
+  const q=quiz.questions[currentQ];
+  const isAssessment=quiz.category==='assessment'||quiz.category==='arena';
+  if(!isAssessment && opts[parseInt(q.correct)]) opts[parseInt(q.correct)].classList.add('correct');
+  answers.push({question:q.question,selected:-1,correct:parseInt(q.correct),isCorrect:false});
+  showBuzz("⏰ Time's up!");
+  document.getElementById('arena-next-btn').style.display='block';
+}
+
+function arenaAnswer(i, correctIdx){
+  clearInterval(arenaQuestionTimer);
+  const opts=document.querySelectorAll('.arena-opt');
+  opts.forEach(o=>o.disabled=true);
+  const q=quiz.questions[currentQ];
+  // Use passed correctIdx (already int) OR fall back to parsing q.correct
+  const corr = (correctIdx !== undefined) ? correctIdx : parseInt(q.correct)||0;
+  const isAssessment=quiz.category==='assessment'||quiz.category==='arena';
+  const isCorrect=(i===corr);
+
+  // Always count score — teacher sees real results even in assessment mode
+  if(isCorrect) score++;
+
+  if(isAssessment){
+    opts[i].classList.add('selected-assessment');
+    showBuzz('✓ Answer locked in!');
+  }else{
+    opts[i].classList.add(isCorrect?'correct':'wrong');
+    if(opts[corr]) opts[corr].classList.add('correct');
+    if(isCorrect){showBuzz('🎉 CORRECT!');}
+    else{showBuzz(`✗ It was ${String.fromCharCode(65+corr)}`);}
+  }
+  answers.push({question:q.question,selected:i,correct:corr,isCorrect});
+  document.getElementById('arena-next-btn').style.display='block';
+}
+
+function showBuzz(msg){
+  const el=document.createElement('div');el.className='arena-buzz';el.textContent=msg;
+  el.style.color=msg.includes('CORRECT')||msg.includes('Locked')?'#00d4aa':'#ff6666';
+  document.body.appendChild(el);setTimeout(()=>el.remove(),1000);
+}
+
+function arenaNext(){
+  currentQ++;
+  if(currentQ>=quiz.questions.length){finishQuiz();return;}
+  renderArenaQuestion();
+}
+
+/* ══ SHARED TIMER ══ */
+function startTimer(elId){
+  updateTimerEl(elId);
+  timerInterval=setInterval(()=>{
+    secondsLeft--;updateTimerEl(elId);
+    if(secondsLeft<=0){clearInterval(timerInterval);showToast("Time's up!",'error');setTimeout(finishQuiz,800);}
+  },1000);
+}
+function updateTimerEl(elId){
+  const m=Math.floor(secondsLeft/60),s=secondsLeft%60;
+  const el=document.getElementById(elId);
+  if(!el)return;
+  el.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  el.className=`timer-pill ${secondsLeft<=30?'danger':secondsLeft<=60?'warn':''}`;
+}
+
+/* ══ FINISH ══ */
+async function finishQuiz(){
+  clearInterval(timerInterval);
+  clearInterval(arenaQuestionTimer);
+  flappyActive=false;
+  if(flappyAnimFrame)cancelAnimationFrame(flappyAnimFrame);
+  quizStarted=false;
+
+  const total=quiz.questions.length;
+  // Ensure score never exceeds total
+  const finalScore=Math.min(score, total);
+  const pct=total>0?Math.round(finalScore/total*100):0;
+  const xp=Math.round((finalScore/total)*50);
+  const isPerfect=finalScore===total&&total>0;
+  const elapsed=(quiz.time||15)*60-secondsLeft;
+  const isAssessment=quiz.category==='assessment'||quiz.category==='arena';
+  const nowISO=new Date().toISOString();
+
+  if(!isPreview&&student){
+    await saveScore({
+      email:student.email,
+      name:student.name,
+      section:student.section,
+      quizId:String(quiz.id),
+      quizTitle:quiz.title||'Quest',
+      category:quiz.category||'practice',
+      score:finalScore,
+      total,
+      xp,
+      tabSwitches:tabCount,
+      timeTaken:`${Math.floor(elapsed/60)}m ${elapsed%60}s`,
+      createdAt:nowISO
+    });
+  }
+  // Update local variable for display
+  score=finalScore;
+
+  // Hide all play screens
+  ['adventure-screen','training-screen','arena-screen'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.classList.add('hidden');
+  });
+  document.getElementById('result-screen').classList.remove('hidden');
+
+  const col=pct>=90?'#00d4aa':pct>=75?'#00aaff':pct>=50?'#ffd700':'#ff4444';
+  const circle=document.getElementById('result-circle');
+  circle.style.cssText=`background:${col}22;border:3px solid ${col};color:${col};width:140px;height:140px;border-radius:50%;margin:0 auto 1.5rem;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:2.2rem;`;
+  circle.textContent=`${pct}%`;
+
+  const titles=[[90,'🌌 LEGENDARY!'],[75,'🚀 Quest Complete!'],[50,'✅ Mission Done!'],[0,'💪 Keep Training!']];
+  document.getElementById('result-title').textContent=titles.find(([t])=>pct>=t)[1];
+  document.getElementById('result-sub').textContent=isPerfect?'🎁 PERFECT SCORE! You earned a Loot Bag!':`You answered ${finalScore} of ${total} correctly.`;
+  document.getElementById('r-score').textContent=`${finalScore}/${total}`;
+  document.getElementById('r-pct').textContent=`${pct}%`;
+  document.getElementById('r-xp').textContent=`+${xp}`;
+  if(isPerfect)document.getElementById('loot-notice').classList.remove('hidden');
+  if(tabCount>0){const tw=document.getElementById('tab-warning');tw.style.display='block';tw.textContent=`⚠ ${tabCount} tab switch(es) detected — logged to your teacher.`;}
+
+  // Review section
+  if(isAssessment){
+    document.getElementById('review-section').innerHTML=`<div style="text-align:center;padding:2rem;background:rgba(255,105,180,.06);border:2px solid rgba(255,105,180,.2);border-radius:14px;"><div style="font-size:2rem;margin-bottom:.75rem;">🏟️</div><p style="font-family:'Fredoka One',cursive;color:#ff69b4;margin-bottom:.4rem;">Assessment Mode</p><p style="font-size:.85rem;color:#c9b8e8;">Answers are not shown. Your teacher will review your results.</p></div>`;
+  }else{
+    document.getElementById('review-section').innerHTML=`<h3 style="font-family:'Fredoka One',cursive;font-size:.85rem;letter-spacing:.1em;color:#7a6090;margin-bottom:1rem;">📋 QUESTION REVIEW</h3>`+
+    answers.map((a,i)=>`<div class="review-item" style="border-left:3px solid ${a.isCorrect?'#00d4aa':'#ff4444'};"><p style="font-size:.82rem;font-weight:700;color:#fffde7;">${i+1}. ${a.question}</p><p style="font-size:.78rem;margin-top:.35rem;color:${a.isCorrect?'#00d4aa':'#ff6666'};">${a.isCorrect?'✓':'✗'} ${a.selected>=0?String.fromCharCode(65+a.selected)+') '+quiz.questions[i].options[a.selected]:'No answer'}${!a.isCorrect&&a.selected>=0?' → Correct: '+String.fromCharCode(65+a.correct)+') '+quiz.questions[i].options[a.correct]:''}</p></div>`).join('');
+  }
+}
+
+function goHome(){window.location.href=isPreview?'teacher.html':'student.html';}
+function confirmExit(){if(confirm('Exit quest? Your progress will be lost.')){clearInterval(timerInterval);clearInterval(arenaQuestionTimer);flappyActive=false;goHome();}}
+
+init();
+</script>
+</body>
+</html>

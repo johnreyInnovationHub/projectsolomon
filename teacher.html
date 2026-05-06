@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Solomon — Wizard Command Tower</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* ══ CSS VARIABLES (inlined so they always work) ══ */
+    :root {
+      --bg-deep:#0d0618; --bg-mid:#1a0a2e;
+      --finn-blue:#00aaff; --finn-blue-dark:#0055aa;
+      --jake-yellow:#ffd700; --jake-orange:#ff8c00;
+      --princess-pink:#ff69b4; --bmo-teal:#00d4aa;
+      --text-primary:#fffde7; --text-secondary:#c9b8e8; --text-muted:#7a6090;
+      --glass-bg:rgba(74,14,143,0.22); --glass-border:rgba(0,170,255,0.22);
+      --ooo-purple:#4a0e8f; --success:#00d4aa; --danger:#ff4444; --warning:#ffd700;
+    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Nunito','Segoe UI',sans-serif; background:#0d0618; color:#fffde7; min-height:100vh; overflow-x:hidden; }
+    #ooo-bg { position:fixed; inset:0; background:linear-gradient(180deg,#0d0618 0%,#1a0a2e 40%,#0f1a3d 70%,#0a0020 100%); z-index:0; overflow:hidden; pointer-events:none; }
+    .ooo-star { position:absolute; border-radius:50%; background:white; animation:twinkle linear infinite; }
+    .ooo-blob { position:fixed; border-radius:50%; filter:blur(90px); pointer-events:none; z-index:0; opacity:0.12; }
+    @keyframes twinkle { 0%,100%{opacity:.2;transform:scale(1)} 50%{opacity:1;transform:scale(1.4)} }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .page { position:relative; z-index:1; min-height:100vh; }
+    .hidden { display:none !important; }
+    .page-section { display:none; }
+    .page-section.active { display:block; }
+    /* NAV */
+    .nav { position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between; padding:1.1rem 2.5rem; background:rgba(13,6,24,0.92); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-bottom:2px solid rgba(0,170,255,0.25); box-shadow:0 4px 20px rgba(0,0,0,.5); }
+    .nav-logo { font-family:'Fredoka One',cursive; font-size:1.2rem; letter-spacing:.05em; background:linear-gradient(135deg,#00aaff,#ffd700,#ff69b4); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .nav-logo span { display:block; font-family:'Nunito',sans-serif; font-size:.58rem; letter-spacing:.25em; color:#c9b8e8; -webkit-text-fill-color:#c9b8e8; margin-top:1px; font-weight:700; text-transform:uppercase; }
+    .nav-links { display:flex; gap:.5rem; align-items:center; }
+    .nav-btn { padding:.45rem 1.1rem; border-radius:50px; border:2px solid rgba(0,170,255,.3); background:transparent; color:#c9b8e8; font-family:'Nunito',sans-serif; font-size:.85rem; font-weight:700; cursor:pointer; transition:all .3s; text-decoration:none; }
+    .nav-btn:hover { background:rgba(0,170,255,.15); color:#00aaff; border-color:#00aaff; }
+    .nav-btn.logout { color:#ff69b4; border-color:rgba(255,105,180,.4); }
+    .nav-btn.logout:hover { background:rgba(255,105,180,.15); }
+    /* GLASS */
+    .glass-card { background:rgba(74,14,143,.22); border:2px solid rgba(0,170,255,.22); border-radius:20px; backdrop-filter:blur(16px); padding:2rem; box-shadow:0 8px 32px rgba(0,0,0,.3); }
+    /* BUTTONS */
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; padding:.75rem 1.75rem; border-radius:50px; font-family:'Nunito',sans-serif; font-size:.95rem; font-weight:800; cursor:pointer; transition:all .25s; text-decoration:none; border:none; letter-spacing:.04em; }
+    .btn-block { width:100%; }
+    .btn-sm { padding:.4rem 1rem; font-size:.82rem; }
+    .btn-cyan { background:linear-gradient(135deg,#00aaff,#0055aa); color:white; box-shadow:0 4px 20px rgba(0,170,255,.4); }
+    .btn-cyan:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(0,170,255,.6); }
+    .btn-gold { background:linear-gradient(135deg,#ffd700,#ff8c00); color:#1a0a2e; font-weight:900; box-shadow:0 4px 20px rgba(255,215,0,.4); }
+    .btn-gold:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(255,215,0,.6); }
+    .btn-magenta { background:linear-gradient(135deg,#ff69b4,#cc0055); color:white; box-shadow:0 4px 20px rgba(255,105,180,.4); }
+    .btn-magenta:hover { transform:translateY(-2px); }
+    .btn-green { background:linear-gradient(135deg,#00d4aa,#00a080); color:white; box-shadow:0 4px 20px rgba(0,212,170,.4); }
+    .btn-green:hover { transform:translateY(-2px); }
+    .btn-ghost { background:transparent; color:#c9b8e8; border:2px solid rgba(0,170,255,.25); }
+    .btn-ghost:hover { background:rgba(0,170,255,.1); color:#fffde7; }
+    /* FORMS */
+    .form-group { margin-bottom:1.25rem; }
+    .form-label { display:block; font-size:.78rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#c9b8e8; margin-bottom:.5rem; }
+    .form-control { width:100%; padding:.8rem 1.1rem; background:rgba(0,0,0,.5); border:2px solid rgba(0,170,255,.2); border-radius:12px; color:#fffde7; font-family:'Nunito',sans-serif; font-size:.95rem; font-weight:600; outline:none; transition:border-color .3s; }
+    .form-control:focus { border-color:#00aaff; }
+    .form-control::placeholder { color:#7a6090; }
+    select.form-control option { background:#1a0a2e; color:#fffde7; }
+    /* BADGES */
+    .badge { display:inline-block; padding:.2rem .6rem; border-radius:50px; font-size:.7rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+    .badge-cyan { background:rgba(0,170,255,.2); color:#00aaff; border:1px solid rgba(0,170,255,.4); }
+    .badge-magenta { background:rgba(255,105,180,.2); color:#ff69b4; border:1px solid rgba(255,105,180,.4); }
+    .badge-gold { background:rgba(255,215,0,.2); color:#ffd700; border:1px solid rgba(255,215,0,.4); }
+    .badge-green { background:rgba(0,212,170,.2); color:#00d4aa; border:1px solid rgba(0,212,170,.4); }
+    .badge-gray { background:rgba(120,100,150,.2); color:#c9b8e8; border:1px solid rgba(120,100,150,.3); }
+    /* TABS */
+    .tab-bar { display:flex; gap:.25rem; background:rgba(0,0,0,.4); padding:.35rem; border-radius:50px; margin-bottom:2rem; border:2px solid rgba(0,170,255,.2); width:fit-content; }
+    .tab-btn { padding:.5rem 1.25rem; border-radius:50px; border:none; background:transparent; color:#c9b8e8; font-family:'Nunito',sans-serif; font-size:.88rem; font-weight:700; cursor:pointer; transition:all .3s; white-space:nowrap; }
+    .tab-btn.active { background:rgba(0,170,255,.2); color:#00aaff; border:1px solid rgba(0,170,255,.35); }
+    /* STAT CARDS */
+    .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:2rem; }
+    .stat-card { background:rgba(74,14,143,.22); border:2px solid rgba(0,170,255,.2); border-radius:16px; padding:1.25rem; text-align:center; transition:all .3s; }
+    .stat-card:hover { border-color:#00aaff; transform:translateY(-2px); }
+    .stat-value { font-family:'Fredoka One',cursive; font-size:2.2rem; color:#00aaff; }
+    .stat-label { font-size:.72rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#7a6090; margin-top:.2rem; }
+    /* SIDEBAR */
+    .dashboard-layout { display:flex; min-height:calc(100vh - 65px); }
+    .sidebar { width:240px; flex-shrink:0; background:rgba(13,6,24,.88); border-right:2px solid rgba(0,170,255,.2); padding:1.5rem 1rem; position:sticky; top:65px; height:calc(100vh - 65px); overflow-y:auto; }
+    .sidebar-section-label { font-family:'Fredoka One',cursive; font-size:.65rem; letter-spacing:.18em; text-transform:uppercase; color:#7a6090; padding:.75rem 1rem .4rem; }
+    .sidebar-item { display:flex; align-items:center; gap:.75rem; padding:.7rem 1rem; border-radius:12px; color:#c9b8e8; font-size:.88rem; font-weight:700; transition:all .3s; cursor:pointer; border:2px solid transparent; background:transparent; width:100%; text-align:left; margin-bottom:.3rem; font-family:'Nunito',sans-serif; }
+    .sidebar-item:hover { background:rgba(74,14,143,.25); color:#fffde7; }
+    .sidebar-item.active { background:rgba(0,170,255,.12); color:#00aaff; border-color:rgba(0,170,255,.25); }
+    .sidebar-icon { font-size:1.2rem; width:24px; text-align:center; }
+    .main-content { flex:1; padding:2.5rem; overflow-x:hidden; }
+    /* PENDING / LIST ITEMS */
+    .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; }
+    .section-title { font-family:'Fredoka One',cursive; font-size:1.8rem; letter-spacing:.04em; background:linear-gradient(135deg,#fffde7,#00aaff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:.3rem; }
+    .section-sub { color:#c9b8e8; font-size:.9rem; font-weight:700; }
+    .pending-card { display:flex; align-items:center; gap:1rem; padding:1rem; background:rgba(0,0,0,.25); border:2px solid rgba(0,170,255,.15); border-radius:14px; margin-bottom:.75rem; transition:border-color .2s; }
+    .pending-card:hover { border-color:rgba(0,170,255,.35); }
+    .student-avatar-sm { width:46px; height:46px; border-radius:50%; background:linear-gradient(135deg,#4a0e8f,#0055aa); display:flex; align-items:center; justify-content:center; font-size:1.5rem; flex-shrink:0; border:2px solid rgba(0,170,255,.2); }
+    .pending-info { flex:1; }
+    .pending-info h4 { font-size:.92rem; font-weight:700; margin-bottom:.2rem; }
+    .pending-info p { font-size:.78rem; color:#c9b8e8; font-weight:600; }
+    .pending-actions { display:flex; gap:.5rem; }
+    .quiz-list-item { display:flex; align-items:center; gap:1rem; padding:1rem; background:rgba(0,0,0,.25); border:2px solid rgba(0,170,255,.15); border-radius:14px; margin-bottom:.75rem; transition:border-color .2s; }
+    .quiz-list-item:hover { border-color:rgba(0,170,255,.35); }
+    .quiz-list-item .quiz-meta { flex:1; }
+    .quiz-list-item h4 { font-size:.92rem; font-weight:700; }
+    .quiz-list-item p { font-size:.78rem; color:#c9b8e8; font-weight:600; margin-top:.2rem; }
+    /* DEPLOY CARDS */
+    .deploy-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; margin-top:1.5rem; }
+    .deploy-card { background:rgba(74,14,143,.22); border:2px solid rgba(0,170,255,.2); border-radius:22px; padding:2rem; transition:all .3s; cursor:pointer; text-align:center; }
+    .deploy-card:hover { transform:translateY(-4px); }
+    .deploy-card.adventure-deploy:hover { border-color:#00aaff; box-shadow:0 12px 40px rgba(0,170,255,.2); }
+    .deploy-card.training-deploy:hover  { border-color:#ffd700; box-shadow:0 12px 40px rgba(255,215,0,.2); }
+    .deploy-card.arena-deploy:hover     { border-color:#ff69b4; box-shadow:0 12px 40px rgba(255,105,180,.2); }
+    .deploy-icon { font-size:3.5rem; display:block; margin-bottom:1rem; }
+    .deploy-card h3 { font-family:'Fredoka One',cursive; font-size:1.2rem; margin-bottom:.5rem; }
+    .deploy-card p { font-size:.82rem; color:#c9b8e8; font-weight:600; line-height:1.6; }
+    /* UPLOAD */
+    .upload-zone { border:3px dashed rgba(0,170,255,.3); border-radius:18px; padding:3rem 2rem; text-align:center; cursor:pointer; transition:all .3s; background:rgba(0,0,0,.2); }
+    .upload-zone:hover, .upload-zone.drag-over { border-color:#00aaff; background:rgba(0,170,255,.05); box-shadow:0 0 30px rgba(0,170,255,.1); }
+    .upload-icon { font-size:3.5rem; display:block; margin-bottom:1rem; }
+    .upload-zone p { color:#c9b8e8; font-size:.9rem; font-weight:600; }
+    .upload-preview { background:rgba(0,0,0,.3); border:2px solid rgba(0,170,255,.15); border-radius:14px; padding:1.25rem; margin-top:1rem; }
+    .question-preview { padding:.75rem; border:1px solid rgba(0,170,255,.15); border-radius:10px; margin-bottom:.5rem; font-size:.85rem; font-weight:600; color:#fffde7; }
+    /* DATA TABLE */
+    .data-table { width:100%; border-collapse:collapse; font-size:.88rem; }
+    .data-table th { font-family:'Fredoka One',cursive; font-size:.75rem; letter-spacing:.1em; text-transform:uppercase; color:#7a6090; padding:.6rem .75rem; border-bottom:2px solid rgba(0,170,255,.2); text-align:left; }
+    .data-table td { padding:.75rem; border-bottom:1px solid rgba(255,255,255,.04); vertical-align:middle; font-weight:600; }
+    .data-table tr:hover td { background:rgba(0,170,255,.04); }
+    /* MISC */
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+    .empty-state { text-align:center; padding:3rem; color:#7a6090; }
+    .empty-state span { font-size:3rem; display:block; margin-bottom:1rem; }
+    .spinner { width:40px; height:40px; border:3px solid rgba(0,170,255,.2); border-top-color:#00aaff; border-radius:50%; animation:spin .8s linear infinite; margin:2rem auto; }
+    .rec-sec-btn { padding:.4rem 1rem; border-radius:50px; border:none; background:transparent; color:#c9b8e8; font-family:'Nunito',sans-serif; font-size:.82rem; font-weight:700; cursor:pointer; transition:all .2s; }
+    .rec-sec-btn.active-sec { background:rgba(0,170,255,.18); color:#00aaff; }
+    #global-toast { position:fixed; bottom:2rem; right:2rem; background:rgba(26,10,46,.98); border:2px solid #00aaff; border-radius:14px; padding:1rem 1.5rem; color:#fffde7; font-size:.9rem; font-weight:700; z-index:9999; transform:translateX(120%); transition:transform .4s cubic-bezier(.34,1.56,.64,1); max-width:320px; box-shadow:0 8px 30px rgba(0,0,0,.5); }
+    #global-toast.show { transform:translateX(0); }
+    #global-toast.success { border-color:#00d4aa; }
+    #global-toast.error { border-color:#ff4444; }
+    @media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr);}.sidebar{display:none;}.dashboard-layout{flex-direction:column;}.main-content{padding:1.5rem;}.deploy-grid{grid-template-columns:1fr;}.grid-2{grid-template-columns:1fr;}.nav{padding:1rem 1.25rem;}}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div id="ooo-bg"></div>
+
+  <nav class="nav">
+    <div class="nav-logo">
+      PROJECT SOLOMON
+      <span>WIZARD COMMAND TOWER</span>
+    </div>
+    <div class="nav-links">
+      <span id="nav-time" style="font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--text-muted);margin-right:0.5rem;"></span>
+      <a href="index.html" class="nav-btn logout" onclick="doLogout()">⏻ Logout</a>
+    </div>
+  </nav>
+
+  <div class="dashboard-layout page">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-section-label">Command</div>
+      <button class="sidebar-item active" onclick="showTab('overview')">
+        <span class="sidebar-icon">🏰</span> Overview
+      </button>
+      <button class="sidebar-item" onclick="showTab('enrollment')">
+        <span class="sidebar-icon">👥</span> Enrollment
+      </button>
+
+      <div class="sidebar-section-label" style="margin-top:0.5rem;">Deploy</div>
+      <button class="sidebar-item" onclick="showTab('deploy')">
+        <span class="sidebar-icon">🚀</span> Deploy Hub
+      </button>
+      <button class="sidebar-item" onclick="showTab('adventure')">
+        <span class="sidebar-icon">🗺️</span> Deploy Adventure
+      </button>
+      <button class="sidebar-item" onclick="showTab('training')">
+        <span class="sidebar-icon">🐦</span> Training Camp
+      </button>
+      <button class="sidebar-item" onclick="showTab('arena')">
+        <span class="sidebar-icon">🏟️</span> Arena
+      </button>
+
+      <div class="sidebar-section-label" style="margin-top:0.5rem;">Data</div>
+      <button class="sidebar-item" onclick="showTab('quizzes')">
+        <span class="sidebar-icon">📋</span> Quest Portal
+      </button>
+      <button class="sidebar-item" onclick="showTab('records')">
+        <span class="sidebar-icon">📊</span> Records
+      </button>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+      <!-- ══ OVERVIEW ══ -->
+      <div id="tab-overview" class="page-section active">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">🏰 Wizard's Overview</h1>
+            <p class="section-sub">Your magical classroom in the Land of Ooo</p>
+          </div>
+          <div style="display:flex;gap:0.5rem;">
+            <button class="btn btn-ghost btn-sm" onclick="runDiagnostic()" style="font-size:0.75rem;">🔍 Diagnose</button>
+            <button class="btn btn-ghost btn-sm" onclick="fixSheets()" style="font-size:0.75rem;color:var(--jake-yellow);">🔧 Fix Sheets</button>
+          </div>
+        </div>
+        <div id="diagnostic-box" style="display:none;background:rgba(0,0,0,0.5);border:2px solid rgba(0,170,255,0.3);border-radius:12px;padding:1rem;margin-bottom:1.5rem;font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--finn-blue);line-height:1.8;max-height:200px;overflow-y:auto;white-space:pre-wrap;"></div>
+
+        <div class="stats-row" id="stats-row">
+          <div class="stat-card"><div class="stat-value" id="stat-students">0</div><div class="stat-label">Active Heroes</div></div>
+          <div class="stat-card"><div class="stat-value" id="stat-pending">0</div><div class="stat-label">Awaiting Blessing</div></div>
+          <div class="stat-card"><div class="stat-value" id="stat-quizzes">0</div><div class="stat-label">Quests Deployed</div></div>
+          <div class="stat-card"><div class="stat-value" id="stat-scores">0</div><div class="stat-label">Total Submissions</div></div>
+        </div>
+
+        <div class="grid-2" style="gap:1.5rem;">
+          <div class="glass-card">
+            <h3 style="font-family:'Fredoka One',cursive;font-size:1rem;letter-spacing:0.06em;margin-bottom:1.25rem;color:var(--text-secondary);">⏳ AWAITING WIZARD'S BLESSING</h3>
+            <div id="overview-pending-list"><div class="empty-state"><span>🎉</span>No pending students</div></div>
+            <button class="btn btn-ghost btn-sm" onclick="showTab('enrollment')" style="margin-top:0.75rem;">View All →</button>
+          </div>
+          <div class="glass-card">
+            <h3 style="font-family:'Fredoka One',cursive;font-size:1rem;letter-spacing:0.06em;margin-bottom:1.25rem;color:var(--text-secondary);">🚀 RECENT QUESTS</h3>
+            <div id="overview-quiz-list"><div class="empty-state"><span>📭</span>No quests deployed yet</div></div>
+            <button class="btn btn-ghost btn-sm" onclick="showTab('quizzes')" style="margin-top:0.75rem;">View All →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ ENROLLMENT ══ -->
+      <div id="tab-enrollment" class="page-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">👥 Hero Enrollment</h1>
+            <p class="section-sub">Approve or reject student registrations</p>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="filterEnrollment('pending',this)">⏳ Pending</button>
+          <button class="tab-btn" onclick="filterEnrollment('approved',this)">✅ Approved</button>
+          <button class="tab-btn" onclick="filterEnrollment('rejected',this)">❌ Rejected</button>
+          <button class="tab-btn" onclick="filterEnrollment('all',this)">🌍 All</button>
+        </div>
+        <div id="enrollment-list"><div class="spinner"></div></div>
+      </div>
+
+      <!-- ══ DEPLOY HUB ══ -->
+      <div id="tab-deploy" class="page-section">
+        <h1 class="section-title">🚀 Deploy Hub</h1>
+        <p class="section-sub">Choose what type of quest to unleash upon your heroes</p>
+
+        <div class="deploy-grid">
+          <div class="deploy-card adventure-deploy" onclick="showTab('adventure')">
+            <span class="deploy-icon">🗺️</span>
+            <h3 style="color:var(--finn-blue);">Deploy Adventure</h3>
+            <p>Upload lesson PDFs — automatically converted into an epic, game-like interactive lesson experience.</p>
+            <button class="btn btn-cyan btn-sm" style="margin-top:1.25rem;">Open Adventure Deploy →</button>
+          </div>
+
+          <div class="deploy-card training-deploy" onclick="showTab('training')">
+            <span class="deploy-icon">🐦</span>
+            <h3 style="color:var(--jake-yellow);">Training Camp</h3>
+            <p>Upload an HTML quiz — transformed into a Flappy Bird-style game with power-ups for practice!</p>
+            <button class="btn btn-gold btn-sm" style="margin-top:1.25rem;">Open Training Camp →</button>
+          </div>
+
+          <div class="deploy-card arena-deploy" onclick="showTab('arena')">
+            <span class="deploy-icon">🏟️</span>
+            <h3 style="color:var(--princess-pink);">Arena</h3>
+            <p>Upload an HTML quiz — converted into a thrilling game show summative assessment battle!</p>
+            <button class="btn btn-magenta btn-sm" style="margin-top:1.25rem;">Open Arena Deploy →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ DEPLOY ADVENTURE (PDF Lessons) ══ -->
+      <div id="tab-adventure" class="page-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">🗺️ Deploy Adventure</h1>
+            <p class="section-sub">Upload your HTML lesson — instantly converted to a gamified adventure!</p>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="showTab('deploy')">← Back</button>
+        </div>
+
+        <div class="glass-card" style="max-width:680px;">
+          <div style="background:rgba(0,170,255,.08);border:2px solid rgba(0,170,255,.25);border-radius:14px;padding:1rem;margin-bottom:1.5rem;font-size:.82rem;color:#00aaff;font-weight:700;line-height:1.7;">
+            🗺️ <strong>How it works:</strong> Export your lesson as HTML (from PowerPoint, Google Slides, or write it directly). Upload it here — the system instantly parses the content and wraps it in the Adventure Time lesson experience. <strong style="color:#ffd700;">No AI, no API key, works instantly and free!</strong>
+          </div>
+
+          <div style="background:rgba(255,215,0,.06);border:2px solid rgba(255,215,0,.2);border-radius:12px;padding:1rem;margin-bottom:1.5rem;">
+            <div style="font-family:'Fredoka One',cursive;font-size:.82rem;color:#ffd700;margin-bottom:.5rem;">📋 HOW TO PREPARE YOUR HTML LESSON</div>
+            <div style="font-size:.78rem;color:#c9b8e8;font-weight:700;line-height:1.8;">
+              Use <strong style="color:#fffde7;">&lt;h1&gt;</strong> or <strong style="color:#fffde7;">&lt;h2&gt;</strong> tags for section titles<br>
+              Use <strong style="color:#fffde7;">&lt;p&gt;</strong> tags for lesson content/explanations<br>
+              Use <strong style="color:#fffde7;">&lt;ul&gt;&lt;li&gt;</strong> for bullet point lists<br>
+              Add <strong style="color:#fffde7;">&lt;!-- CHECKPOINT --&gt;</strong> comments where you want quiz breaks<br>
+              After each checkpoint comment, add questions as <strong style="color:#fffde7;">&lt;!-- Q: question | A: answer1 | A: answer2* | A: answer3 --&gt;</strong> (star = correct)<br>
+              <span style="color:#ffd700;">Tip: Save any webpage as HTML and upload it!</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Lesson Title</label>
+            <input type="text" id="adv-title" class="form-control" placeholder="e.g. Introduction to Thermochemistry" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Subject / Topic</label>
+            <input type="text" id="adv-subject" class="form-control" placeholder="e.g. Science — General Chemistry 2" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Allowed Sections</label>
+            <select id="adv-sections" class="form-control" multiple style="height:110px;">
+              <option value="11A" selected>Grade 11-A</option>
+              <option value="11B" selected>Grade 11-B</option>
+              <option value="11C" selected>Grade 11-C</option>
+              <option value="11D" selected>Grade 11-D</option>
+              <option value="DEMO" selected>DEMO</option>
+            </select>
+          </div>
+
+          <label class="form-label">HTML Lesson File</label>
+          <div class="upload-zone" id="adv-upload-zone" onclick="document.getElementById('adv-html-input').click()">
+            <div class="upload-icon">📄</div>
+            <p><strong>Click or drag & drop</strong> your HTML lesson file here</p>
+            <p style="margin-top:.5rem;font-size:.78rem;">Supports: .html, .htm files — instantly converted to Adventure format!</p>
+          </div>
+          <input type="file" id="adv-html-input" accept=".html,.htm" class="hidden" onchange="handleAdvHTMLUpload(this)" />
+
+          <div id="adv-preview" class="hidden" style="margin-top:1.25rem;">
+            <div class="upload-preview">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+                <h4 style="font-family:'Fredoka One',cursive;font-size:.9rem;color:#fffde7;">📡 LESSON PARSED</h4>
+                <span id="adv-filename" class="badge badge-cyan"></span>
+              </div>
+              <div id="adv-parse-summary"></div>
+            </div>
+            <div id="adv-scenes-preview" style="max-height:300px;overflow-y:auto;margin-top:.75rem;"></div>
+            <div style="display:flex;gap:1rem;margin-top:1.25rem;">
+              <button class="btn btn-cyan" style="flex:1;" id="deploy-adv-btn" onclick="deployAdventure()">🗺️ Deploy Adventure!</button>
+              <button class="btn btn-ghost" onclick="clearAdvHTML()">✕ Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ TRAINING CAMP (Practice — Flappy Bird style) ══ -->
+      <div id="tab-training" class="page-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">🐦 Training Camp Deploy</h1>
+            <p class="section-sub">Upload an HTML quiz — we'll turn it into a Flappy Bird game with power-ups!</p>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="showTab('deploy')">← Back</button>
+        </div>
+
+        <div class="glass-card" style="max-width:680px;">
+          <div style="background:rgba(255,215,0,0.08);border:2px solid rgba(255,215,0,0.25);border-radius:14px;padding:1rem;margin-bottom:1.5rem;font-size:0.82rem;color:var(--jake-yellow);font-weight:700;line-height:1.6;">
+            🐦 <strong>How it works:</strong> Upload an HTML quiz with questions. Heroes will flap through obstacles — answer correctly to gain speed boosts and power-ups! Great for practice assessments.
+          </div>
+          <div class="form-group">
+            <label class="form-label">Training Mission Title</label>
+            <input type="text" id="tc-title" class="form-control" placeholder="e.g. Math Sprint — Algebra" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Subject / Topic</label>
+            <input type="text" id="tc-subject" class="form-control" placeholder="e.g. Math — Algebra" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Time Limit (minutes)</label>
+            <input type="number" id="tc-time" class="form-control" placeholder="15" min="1" max="180" value="15" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Allowed Sections</label>
+            <select id="tc-sections" class="form-control" multiple style="height:110px;">
+              <option value="11A" selected>Grade 11-A</option>
+              <option value="11B" selected>Grade 11-B</option>
+              <option value="11C" selected>Grade 11-C</option>
+              <option value="11D" selected>Grade 11-D</option>
+              <option value="DEMO" selected>DEMO</option>
+            </select>
+          </div>
+
+          <label class="form-label">HTML Quiz File</label>
+          <div class="upload-zone" id="tc-upload-zone" onclick="document.getElementById('tc-input').click()">
+            <div class="upload-icon">🐦</div>
+            <p><strong>Click or drag & drop</strong> your HTML quiz file</p>
+            <p style="margin-top:0.5rem;font-size:0.78rem;">Supports: .html files with numbered questions and A–D options</p>
+          </div>
+          <input type="file" id="tc-input" accept=".html,.htm" class="hidden" onchange="handleTrainingUpload(this)" />
+
+          <div id="tc-preview" class="hidden">
+            <div class="upload-preview">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                <h4 style="font-family:'Fredoka One',cursive;font-size:0.9rem;">📡 PARSED QUESTIONS</h4>
+                <span id="tc-q-count" class="badge badge-gold">0 questions</span>
+              </div>
+              <div id="tc-questions-preview" style="max-height:260px;overflow-y:auto;"></div>
+            </div>
+            <div style="display:flex;gap:1rem;margin-top:1.25rem;">
+              <button class="btn btn-gold" style="flex:1;" onclick="deployTraining()">🐦 Deploy Training Camp!</button>
+              <button class="btn btn-ghost" onclick="clearTraining()">✕ Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ ARENA (Summative — Game Show) ══ -->
+      <div id="tab-arena" class="page-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">🏟️ Arena Deploy</h1>
+            <p class="section-sub">Upload an HTML quiz — converted into a thrilling game show showdown!</p>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="showTab('deploy')">← Back</button>
+        </div>
+
+        <div class="glass-card" style="max-width:680px;">
+          <div style="background:rgba(255,105,180,0.08);border:2px solid rgba(255,105,180,0.25);border-radius:14px;padding:1rem;margin-bottom:1.5rem;font-size:0.82rem;color:var(--princess-pink);font-weight:700;line-height:1.6;">
+            🏟️ <strong>How it works:</strong> Upload an HTML quiz. Students compete in a game show format — timed buzzer rounds, dramatic reveals, leaderboard tracking! This is a summative assessment: answers are hidden until the end.
+          </div>
+          <div class="form-group">
+            <label class="form-label">Arena Battle Title</label>
+            <input type="text" id="arena-title" class="form-control" placeholder="e.g. Final Battle — Chapter 5" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Subject / Topic</label>
+            <input type="text" id="arena-subject" class="form-control" placeholder="e.g. Science — Final Exam" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Time Limit (minutes)</label>
+            <input type="number" id="arena-time" class="form-control" placeholder="30" min="1" max="180" value="30" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Allowed Sections</label>
+            <select id="arena-sections" class="form-control" multiple style="height:110px;">
+              <option value="11A" selected>Grade 11-A</option>
+              <option value="11B" selected>Grade 11-B</option>
+              <option value="11C" selected>Grade 11-C</option>
+              <option value="11D" selected>Grade 11-D</option>
+              <option value="DEMO" selected>DEMO</option>
+            </select>
+          </div>
+
+          <label class="form-label">HTML Quiz File</label>
+          <div class="upload-zone" id="arena-upload-zone" onclick="document.getElementById('arena-input').click()">
+            <div class="upload-icon">🏟️</div>
+            <p><strong>Click or drag & drop</strong> your HTML quiz file</p>
+            <p style="margin-top:0.5rem;font-size:0.78rem;">Summative mode: answers are hidden; only final scores shown to students</p>
+          </div>
+          <input type="file" id="arena-input" accept=".html,.htm" class="hidden" onchange="handleArenaUpload(this)" />
+
+          <div id="arena-preview" class="hidden">
+            <div class="upload-preview">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                <h4 style="font-family:'Fredoka One',cursive;font-size:0.9rem;">📡 PARSED QUESTIONS</h4>
+                <span id="arena-q-count" class="badge badge-magenta">0 questions</span>
+              </div>
+              <div id="arena-questions-preview" style="max-height:260px;overflow-y:auto;"></div>
+            </div>
+            <div style="display:flex;gap:1rem;margin-top:1.25rem;">
+              <button class="btn btn-magenta" style="flex:1;" onclick="deployArena()">🏟️ Deploy Arena Battle!</button>
+              <button class="btn btn-ghost" onclick="clearArena()">✕ Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ QUEST PORTAL ══ -->
+      <div id="tab-quizzes" class="page-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">📋 Quest Portal</h1>
+            <p class="section-sub">Manage all deployed quests</p>
+          </div>
+          <button class="btn btn-green btn-sm" onclick="resyncAllQuizzes()">☁ Sync to Sheets</button>
+        </div>
+        <div id="sync-status" style="display:none;background:rgba(0,170,255,0.08);border:2px solid rgba(0,170,255,0.2);border-radius:12px;padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.85rem;color:var(--finn-blue);font-weight:700;"></div>
+        <div id="quiz-portal-list"></div>
+      </div>
+
+      <!-- ══ RECORDS ══ -->
+      <div id="tab-records" class="page-section">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">📊 Mission Records</h1>
+            <p class="section-sub">Student scores, analytics, and achievements</p>
+          </div>
+          <button class="btn btn-green btn-sm" onclick="downloadRecords()">⬇ Export CSV</button>
+        </div>
+
+        <!-- Filters -->
+        <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;margin-bottom:1.5rem;">
+          <div style="display:flex;gap:0.25rem;background:rgba(0,0,0,0.3);padding:0.3rem;border-radius:50px;border:2px solid var(--glass-border);">
+            <button class="rec-sec-btn active-sec" data-sec="all" onclick="setSection('all',this)">All</button>
+            <button class="rec-sec-btn" data-sec="11A" onclick="setSection('11A',this)">11A</button>
+            <button class="rec-sec-btn" data-sec="11B" onclick="setSection('11B',this)">11B</button>
+            <button class="rec-sec-btn" data-sec="11C" onclick="setSection('11C',this)">11C</button>
+            <button class="rec-sec-btn" data-sec="11D" onclick="setSection('11D',this)">11D</button>
+            <button class="rec-sec-btn" data-sec="DEMO" onclick="setSection('DEMO',this)">DEMO</button>
+          </div>
+          <select id="records-quiz-filter" class="form-control" style="width:auto;min-width:180px;padding:0.4rem 0.9rem;font-size:0.85rem;" onchange="applyRecordFilters()">
+            <option value="all">All Quests</option>
+          </select>
+          <select id="records-cat-filter" class="form-control" style="width:auto;min-width:160px;padding:0.4rem 0.9rem;font-size:0.85rem;" onchange="applyRecordFilters()">
+            <option value="all">All Types</option>
+            <option value="adventure">🗺️ Adventure</option>
+            <option value="practice">🐦 Training</option>
+            <option value="assessment">🏟️ Arena</option>
+          </select>
+          <input type="text" id="records-search" class="form-control" placeholder="🔍 Search student..." style="width:auto;min-width:180px;flex:1;padding:0.45rem 0.9rem;font-size:0.85rem;" oninput="applyRecordFilters()" />
+          <select id="records-sort" class="form-control" style="width:auto;min-width:150px;padding:0.4rem 0.9rem;font-size:0.85rem;" onchange="applyRecordFilters()">
+            <option value="date-desc">Newest First</option>
+            <option value="date-asc">Oldest First</option>
+            <option value="score-desc">Highest Score</option>
+            <option value="score-asc">Lowest Score</option>
+            <option value="name-asc">Name A–Z</option>
+          </select>
+        </div>
+
+        <div id="records-summary" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-bottom:1.25rem;"></div>
+
+        <div class="glass-card" style="padding:0;overflow:hidden;overflow-x:auto;">
+          <table class="data-table" style="min-width:700px;">
+            <thead>
+              <tr>
+                <th>Hero</th><th>Section</th><th>Quest</th><th>Type</th>
+                <th>Score</th><th>Tab ⚠</th><th>Date</th><th>XP</th>
+              </tr>
+            </thead>
+            <tbody id="records-body">
+              <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">Loading records...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="records-count" style="margin-top:0.75rem;font-size:0.78rem;color:var(--text-muted);text-align:right;font-weight:700;"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Teacher Gate -->
+  <div id="teacher-gate" style="display:none;position:fixed;inset:0;background:#0d0618;z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:rgba(74,14,143,0.35);border:2px solid rgba(0,170,255,0.3);border-radius:24px;padding:2.5rem;max-width:400px;width:90%;text-align:center;backdrop-filter:blur(20px);box-shadow:0 25px 80px rgba(0,0,0,0.7);">
+      <div style="font-size:3.5rem;margin-bottom:1rem;">🧙</div>
+      <h2 style="font-family:'Fredoka One',cursive;font-size:1.3rem;margin-bottom:0.25rem;color:#fffde7;">WIZARD COMMAND TOWER</h2>
+      <p style="color:#c9b8e8;font-size:0.85rem;margin-bottom:1.5rem;font-weight:700;">Enter your password to access the Command Tower</p>
+      <input type="password" id="gate-pw" style="width:100%;padding:.8rem 1.1rem;background:rgba(0,0,0,.6);border:2px solid rgba(0,170,255,.25);border-radius:12px;color:#fffde7;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:600;outline:none;margin-bottom:.75rem;" placeholder="Teacher password" onkeydown="if(event.key==='Enter')gateLogin()" />
+      <div id="gate-err" style="color:#ff4444;font-size:0.85rem;font-weight:700;margin-bottom:0.75rem;padding:.5rem;background:rgba(255,68,68,.1);border-radius:8px;display:none;"></div>
+      <button onclick="gateLogin()" style="width:100%;padding:.75rem;background:linear-gradient(135deg,#00aaff,#0055aa);border:none;border-radius:50px;color:white;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;margin-bottom:.75rem;box-shadow:0 4px 20px rgba(0,170,255,.4);">Enter Command Tower ⚡</button>
+      <a href="index.html" style="color:#7a6090;font-size:0.8rem;text-decoration:none;font-weight:700;">← Back to Land of Wit</a>
+    </div>
+  </div>
+
+  <div id="global-toast"></div>
+  <!-- Supabase SDK + shared app.js -->
+  <script src="js/app.js"></script>
+  <script>
+    // Init background
+    (function() {
+      const bg = document.getElementById('ooo-bg');
+      for (let i = 0; i < 150; i++) {
+        const s = document.createElement('div'); s.className = 'ooo-star';
+        const sz = Math.random()*2+0.5;
+        s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-duration:${Math.random()*4+2}s;animation-delay:${Math.random()*5}s;opacity:${Math.random()*0.5+0.1};`;
+        bg.appendChild(s);
+      }
+    })();
+
+    // Auth gate — password is permanently 'solomonwisdom'
+    (function() {
+      // Force-set the correct password, clearing any stale value
+      localStorage.removeItem('solomon_teacher_pw');
+      localStorage.setItem('solomon_teacher_pw', 'solomonwisdom');
+
+      const s = getSession();
+      const gate = document.getElementById('teacher-gate');
+      if (!s || s.role !== 'teacher') {
+        gate.style.display = 'flex';
+        setTimeout(() => document.getElementById('gate-pw').focus(), 100);
+      } else {
+        renderOverview();
+      }
+    })();
+
+    function gateLogin() {
+      const TEACHER_PASSWORD = 'solomonwisdom';
+      const entered = (document.getElementById('gate-pw').value || '').trim();
+      const errEl = document.getElementById('gate-err');
+      if (!entered) {
+        errEl.textContent = '⚠ Please type your password.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (entered === TEACHER_PASSWORD) {
+        setSession({ role: 'teacher' });
+        document.getElementById('teacher-gate').style.display = 'none';
+        renderOverview();
+      } else {
+        errEl.textContent = '✕ Wrong password. Try again!';
+        errEl.style.display = 'block';
+        document.getElementById('gate-pw').value = '';
+        document.getElementById('gate-pw').focus();
+      }
+    }
+
+    // Override showToast to work without CSS vars
+    let _tt;
+    function showToast(msg, type='info') {
+      let t = document.getElementById('global-toast');
+      if (!t) { t = document.createElement('div'); t.id='global-toast'; document.body.appendChild(t); }
+      t.textContent = msg; t.className = `show ${type}`;
+      clearTimeout(_tt); _tt = setTimeout(() => { t.className = ''; }, 3500);
+    }
+
+    let parsedQuestionsTC = [], parsedQuestionsArena = [];
+    let currentFilter = 'pending';
+
+    /* ══ TABS ══ */
+    function showTab(name) {
+      document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+      const tab = document.getElementById('tab-' + name);
+      if (tab) tab.classList.add('active');
+      // Highlight sidebar
+      document.querySelectorAll('.sidebar-item').forEach(btn => {
+        const fn = btn.getAttribute('onclick')||'';
+        if (fn.includes(`'${name}'`)) btn.classList.add('active');
+      });
+      if (name==='overview') renderOverview();
+      if (name==='enrollment') renderEnrollment();
+      if (name==='quizzes') renderQuizPortal();
+      if (name==='records') renderRecords();
+    }
+
+    /* ══ OVERVIEW ══ */
+    async function fixSheets() {
+      showToast('Fixing sheet headers...', 'info');
+      const r = await db.from('students').select('count').limit(1); r.ok = !r.error; r.message = r.error ? r.error.message : 'Supabase connected!';
+      if (r.ok) { showToast('✅ Sheets fixed!', 'success'); setTimeout(()=>renderOverview(), 1500); }
+      else showToast('Error: ' + (r.error||'unknown'), 'error');
+    }
+
+    async function runDiagnostic() {
+      const box = document.getElementById('diagnostic-box');
+      box.style.display = 'block';
+      box.textContent = 'Running diagnostics...\n';
+      const url = getApiUrl();
+      box.textContent += `API URL: ${url ? url.substring(0,60)+'...' : 'NOT SET ❌'}\n`;
+      if (!url) { box.textContent += 'Fix: paste your Apps Script URL in ⚙ Setup\n'; return; }
+      try {
+        box.textContent += 'Testing getStudents...\n';
+        const students_diag = await getStudents(); box.textContent += `Students: ${students_diag.length} found\n`;
+        if (r.ok) box.textContent += `✅ Students in Sheets: ${r.students.length}\n`;
+        else box.textContent += `❌ Error: ${r.error}\n`;
+        box.textContent += 'Testing getQuizzes...\n';
+        const r2 = await db.from('quizzes').select('count').limit(1); r2.ok = !r2.error;
+        if (r2.ok) box.textContent += `✅ Quizzes in Sheets: ${r2.quizzes.length}\n`;
+        else box.textContent += `❌ Error: ${r2.error}\n`;
+      } catch(e) { box.textContent += `Network error: ${e.message}\n`; }
+    }
+
+    async function renderOverview() {
+      document.getElementById('overview-pending-list').innerHTML = '<div class="spinner" style="margin:1.5rem auto;"></div>';
+      document.getElementById('overview-quiz-list').innerHTML = '<div class="spinner" style="margin:1.5rem auto;"></div>';
+      const [students, scores] = await Promise.all([getStudents(), getScores()]); const sheetsQuizResult = { ok: true, quizzes: await getQuizzes() };
+      const sheetsQuizzes = (sheetsQuizResult.ok && sheetsQuizResult.quizzes) ? sheetsQuizResult.quizzes.map(q => {
+        if (typeof q.questions==='string') { try { q.questions=JSON.parse(q.questions); } catch { q.questions=[]; } }
+        return q;
+      }) : [];
+      const localQuizzes = getQuizzes();
+      const sheetIds = new Set(sheetsQuizzes.map(q=>String(q.id)));
+      const quizzes = [...sheetsQuizzes, ...localQuizzes.filter(q=>!sheetIds.has(String(q.id)))];
+      document.getElementById('stat-students').textContent = students.filter(s=>s.status==='approved').length;
+      document.getElementById('stat-pending').textContent = students.filter(s=>s.status==='pending').length;
+      document.getElementById('stat-quizzes').textContent = quizzes.length;
+      document.getElementById('stat-scores').textContent = scores.length;
+      const pending = students.filter(s=>s.status==='pending').slice(0,3);
+      document.getElementById('overview-pending-list').innerHTML = pending.length
+        ? pending.map(s => `<div class="pending-card">
+            <div class="student-avatar-sm">${getAvatarById(s.avatar||'pika').emoji}</div>
+            <div class="pending-info"><h4>${s.name}</h4><p>${s.section} · ${s.email}</p></div>
+            <div class="pending-actions">
+              <button class="btn btn-green btn-sm" onclick="approveStudent('${s.email}')">✓ Bless</button>
+              <button class="btn btn-sm" style="background:rgba(255,68,68,0.12);color:#ff4444;border:1px solid rgba(255,68,68,0.3);" onclick="rejectStudent('${s.email}')">✕</button>
+            </div></div>`).join('')
+        : '<div class="empty-state"><span>🎉</span>No pending students</div>';
+      const recentQ = quizzes.slice(-3).reverse();
+      const catIcon = c => c==='adventure'||c==='lesson'?'🗺️':c==='training'?'🐦':'🏟️';
+      document.getElementById('overview-quiz-list').innerHTML = recentQ.length
+        ? recentQ.map(q => `<div class="quiz-list-item">
+            <span style="font-size:1.8rem;">${catIcon(q.category||'practice')}</span>
+            <div class="quiz-meta"><h4>${q.title}</h4><p>${Array.isArray(q.questions)?q.questions.length:0} questions · ${formatDate(q.createdAt)}</p></div>
+            <span class="badge ${q.locked?'badge-gray':'badge-green'}">${q.locked?'Locked':'Active'}</span>
+          </div>`).join('')
+        : '<div class="empty-state"><span>📭</span>No quests deployed yet</div>';
+    }
+
+    /* ══ ENROLLMENT ══ */
+    async function renderEnrollment() {
+      showLoading('enrollment-list', 'Loading heroes...');
+      const students = await getStudents();
+      const filtered = currentFilter==='all' ? students : students.filter(s=>s.status===currentFilter);
+      const list = document.getElementById('enrollment-list');
+      list.innerHTML = filtered.length ? filtered.map(s => `
+        <div class="pending-card">
+          <div class="student-avatar-sm">${getAvatarById(s.avatar||'pika').emoji}</div>
+          <div class="pending-info">
+            <h4>${s.name} <span class="badge ${s.status==='approved'?'badge-green':s.status==='rejected'?'badge-magenta':'badge-gold'}" style="margin-left:0.5rem;">${s.status.toUpperCase()}</span></h4>
+            <p>${s.email} · Section ${s.section} · Registered ${timeAgo(s.createdAt)}</p>
+          </div>
+          <div class="pending-actions">
+            ${s.status!=='approved'?`<button class="btn btn-green btn-sm" onclick="approveStudent('${s.email}')">✓ Bless</button>`:''}
+            ${s.status!=='rejected'?`<button class="btn btn-sm" style="background:rgba(255,68,68,0.12);color:#ff4444;border:1px solid rgba(255,68,68,0.3);" onclick="rejectStudent('${s.email}')">Reject</button>`:''}
+          </div></div>`).join('')
+        : `<div class="empty-state"><span>🌌</span>No ${currentFilter} heroes found</div>`;
+    }
+
+    function filterEnrollment(status, btn) {
+      currentFilter = status;
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      renderEnrollment();
+    }
+
+    async function approveStudent(email) {
+      bustStudentCache(email);
+      await updateStudent(email, { status: 'approved' });
+      showToast('Hero blessed! Excellence is a Habit! ⚡', 'success');
+      renderEnrollment(); renderOverview();
+    }
+    async function rejectStudent(email) {
+      if (!confirm('Reject this student?')) return;
+      bustStudentCache(email);
+      await updateStudent(email, { status: 'rejected' });
+      showToast('Student rejected.', 'error');
+      renderEnrollment(); renderOverview();
+    }
+
+    /* ══ ADVENTURE DEPLOY (PDF) ══ */
+    let adventurePDF = null;
+
+    /* ══ ADVENTURE HTML PARSER ══ */
+    let adventureHTML = null;
+    let parsedLessonData = null;
+
+    function handleAdvHTMLUpload(input) {
+      const file = input.files[0];
+      if (!file) return;
+      adventureHTML = file;
+      const reader = new FileReader();
+      reader.onload = e => {
+        parsedLessonData = parseHTMLLesson(e.target.result, file.name);
+        document.getElementById('adv-filename').textContent = file.name;
+        showAdvPreview(parsedLessonData);
+        document.getElementById('adv-preview').classList.remove('hidden');
+        showToast(`✅ Parsed ${parsedLessonData.scenes.length} scenes from your lesson!`, 'success');
+      };
+      reader.readAsText(file);
+    }
+
+    // Drag-and-drop for adventure upload
+    const advZone = document.getElementById('adv-upload-zone');
+    if (advZone) {
+      advZone.addEventListener('dragover', e=>{e.preventDefault();advZone.classList.add('drag-over');});
+      advZone.addEventListener('dragleave', ()=>advZone.classList.remove('drag-over'));
+      advZone.addEventListener('drop', e=>{
+        e.preventDefault();advZone.classList.remove('drag-over');
+        const f=e.dataTransfer.files[0];
+        if(f){const inp=document.getElementById('adv-html-input');const dt=new DataTransfer();dt.items.add(f);inp.files=dt.files;handleAdvHTMLUpload(inp);}
+      });
+    }
+
+    function parseHTMLLesson(htmlText, filename) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const scenes = [];
+      let chapterCount = 0;
+      let cpCount = 0;
+      const CHARS = ['jake', 'bmo', 'finn', 'jake', 'bmo', 'finn'];
+      let charIdx = 0;
+
+      // Try to get title from <title> or first h1
+      const docTitle = doc.querySelector('title')?.textContent?.trim() ||
+                       doc.querySelector('h1')?.textContent?.trim() || filename.replace(/\.html?$/i,'');
+      const subject = doc.querySelector('meta[name="subject"]')?.content || '';
+
+      // Walk through the document body
+      const body = doc.body || doc.documentElement;
+
+      // Parse via comment-based checkpoints first
+      const rawHTML = htmlText;
+      const checkpointSections = rawHTML.split(/<!--\s*CHECKPOINT\s*-->/i);
+
+      checkpointSections.forEach((section, secIdx) => {
+        // Parse the HTML chunk
+        const tmp = document.createElement('div');
+        tmp.innerHTML = section;
+
+        // Find all headings and paragraphs
+        const nodes = tmp.querySelectorAll('h1,h2,h3,h4,p,ul,ol,table,blockquote');
+
+        let pendingContent = [];
+        let pendingTitle = '';
+
+        nodes.forEach(node => {
+          const tag = node.tagName.toLowerCase();
+          const text = node.textContent.trim();
+          if (!text) return;
+
+          if (tag === 'h1' || tag === 'h2') {
+            // Flush pending content
+            if (pendingContent.length > 0 || pendingTitle) {
+              flushContent(scenes, pendingTitle, pendingContent, chapterCount, CHARS, charIdx);
+              charIdx = (charIdx + 1) % CHARS.length;
+              pendingContent = [];
+              pendingTitle = '';
+            }
+            // New chapter
+            chapterCount++;
+            scenes.push({
+              type: 'chapter',
+              icon: getIcon(text),
+              chapterNum: chapterCount,
+              title: text,
+              subtitle: 'Continue your journey through the Land of Wit!'
+            });
+            pendingTitle = text;
+
+          } else if (tag === 'h3' || tag === 'h4') {
+            if (pendingContent.length > 0) {
+              flushContent(scenes, pendingTitle, pendingContent, chapterCount, CHARS, charIdx);
+              charIdx = (charIdx + 1) % CHARS.length;
+              pendingContent = [];
+            }
+            pendingTitle = text;
+
+          } else if (tag === 'p') {
+            if (text.length > 20) pendingContent.push({ type: 'p', text });
+
+          } else if (tag === 'ul' || tag === 'ol') {
+            const items = [...node.querySelectorAll('li')].map(li => li.textContent.trim()).filter(Boolean);
+            if (items.length) pendingContent.push({ type: 'list', items });
+
+          } else if (tag === 'blockquote') {
+            pendingContent.push({ type: 'quote', text });
+
+          } else if (tag === 'table') {
+            // Convert table to two_col if 2 columns
+            const rows = [...node.querySelectorAll('tr')];
+            const headers = [...(rows[0]?.querySelectorAll('th,td') || [])].map(c=>c.textContent.trim());
+            if (headers.length >= 2) {
+              const leftItems = [], rightItems = [];
+              rows.slice(1).forEach(row => {
+                const cells = [...row.querySelectorAll('td')].map(c=>c.textContent.trim());
+                if (cells[0]) leftItems.push(cells[0]);
+                if (cells[1]) rightItems.push(cells[1]);
+              });
+              if (leftItems.length && rightItems.length) {
+                scenes.push({
+                  type: 'two_col',
+                  leftTitle: headers[0] || 'Left',
+                  leftColor: 'blue',
+                  leftItems,
+                  leftFormula: '',
+                  rightTitle: headers[1] || 'Right',
+                  rightColor: 'purple',
+                  rightItems,
+                  rightFormula: ''
+                });
+              }
+            }
+          }
+        });
+
+        // Flush remaining content
+        if (pendingContent.length > 0 || pendingTitle) {
+          flushContent(scenes, pendingTitle, pendingContent, chapterCount, CHARS, charIdx);
+          charIdx = (charIdx + 1) % CHARS.length;
+        }
+
+        // Parse checkpoint questions from comments after the section
+        const cpMatches = [...rawHTML.matchAll(/<!--\s*Q:\s*([^|]+)\|([^>]+)-->/gi)];
+        const sectionStart = secIdx > 0 ? rawHTML.indexOf('<!-- CHECKPOINT', rawHTML.indexOf('<!-- CHECKPOINT') + 1) : 0;
+        
+        // Extract questions from <!-- Q: ... --> comments in this section
+        const sectionQuestions = [];
+        const qPattern = /<!--\s*Q:\s*([^|]+)\|([^>]+?)-->/gi;
+        let qMatch;
+        // Look for questions in this section's text
+        const sectionForQ = secIdx < checkpointSections.length - 1 ? checkpointSections[secIdx + 1] : '';
+        const qScan = '<!-- CHECKPOINT -->' + sectionForQ;
+        
+        while ((qMatch = qPattern.exec(qScan)) !== null) {
+          const qText = qMatch[1].trim();
+          const answerPart = qMatch[2];
+          const answers = answerPart.split('|A:').map(a => a.replace(/^A:/,'').trim());
+          const correctIdx = answers.findIndex(a => a.endsWith('*'));
+          const options = answers.map(a => a.replace(/\*$/,'').trim()).filter(Boolean);
+          if (qText && options.length >= 2) {
+            sectionQuestions.push({
+              q: qText,
+              options,
+              correct: Math.max(0, correctIdx),
+              feedback_right: '✓ Correct! Excellence is a Habit!',
+              feedback_wrong: `The correct answer is: ${options[Math.max(0,correctIdx)]}`
+            });
+          }
+        }
+
+        // If this is NOT the last section and there are questions or we have enough content, add checkpoint
+        if (secIdx < checkpointSections.length - 1 && scenes.length > 1) {
+          cpCount++;
+          const cpQuestions = sectionQuestions.length > 0 ? sectionQuestions : generateAutoQuestions(scenes, cpCount);
+          scenes.push({
+            type: 'checkpoint',
+            cpNum: cpCount,
+            title: `Checkpoint ${cpCount} — Knowledge Check!`,
+            questions: cpQuestions
+          });
+        }
+      });
+
+      // If no checkpoints were found, auto-insert one in the middle
+      if (cpCount === 0 && scenes.length > 3) {
+        const midpoint = Math.floor(scenes.length / 2);
+        const autoCP = {
+          type: 'checkpoint',
+          cpNum: 1,
+          title: 'Knowledge Check!',
+          questions: generateAutoQuestions(scenes, 1)
+        };
+        scenes.splice(midpoint, 0, autoCP);
+      }
+
+      // Add a final checkpoint if none after last content
+      if (scenes.length > 0 && scenes[scenes.length-1].type !== 'checkpoint' && cpCount === 0) {
+        cpCount++;
+        scenes.push({
+          type: 'checkpoint',
+          cpNum: cpCount,
+          title: 'Final Check — Prove Your Mastery!',
+          questions: generateAutoQuestions(scenes, cpCount)
+        });
+      }
+
+      return { title: docTitle, subject: subject, scenes };
+    }
+
+    function flushContent(scenes, title, contentBlocks, chapterCount, CHARS, charIdx) {
+      if (!contentBlocks.length) return;
+      
+      // First paragraph → dialogue from a character
+      const firstPara = contentBlocks.find(b => b.type === 'p');
+      if (firstPara && firstPara.text.length > 30) {
+        const char = CHARS[charIdx % CHARS.length];
+        scenes.push({
+          type: 'dialogue',
+          character: char,
+          text: firstPara.text.substring(0, 300) + (firstPara.text.length > 300 ? '...' : '')
+        });
+      }
+
+      // Lists → content card with bullet points
+      const lists = contentBlocks.filter(b => b.type === 'list');
+      const paras = contentBlocks.filter((b,i) => b.type === 'p' && i > 0);
+
+      if (lists.length > 0) {
+        lists.forEach(list => {
+          scenes.push({
+            type: 'content',
+            title: title ? '📋 ' + title : '📋 Key Points',
+            body: list.items.map((item,i)=>`<strong>${String.fromCharCode(9679)}</strong> ${item}`).join('<br>'),
+            formula: ''
+          });
+        });
+      }
+
+      // Remaining paras → content cards
+      paras.forEach((para, i) => {
+        if (i === 0 && !lists.length) return; // skip, already used as dialogue
+        scenes.push({
+          type: 'content',
+          title: i === 0 ? (title ? '🔬 ' + title : '🔬 Learn More') : '💡 More Details',
+          body: para.text,
+          formula: ''
+        });
+      });
+
+      // Blockquotes → highlight boxes
+      const quotes = contentBlocks.filter(b => b.type === 'quote');
+      quotes.forEach(q => {
+        scenes.push({
+          type: 'highlight',
+          style: 'gold',
+          icon: '💡',
+          label: 'Key Insight',
+          body: q.text
+        });
+      });
+    }
+
+    function getIcon(text) {
+      const t = text.toLowerCase();
+      if (t.includes('intro') || t.includes('what')) return '📖';
+      if (t.includes('learn') || t.includes('objective') || t.includes('outcome')) return '🎯';
+      if (t.includes('concept') || t.includes('defin') || t.includes('term')) return '🔬';
+      if (t.includes('example') || t.includes('practice') || t.includes('apply')) return '✏️';
+      if (t.includes('summary') || t.includes('review') || t.includes('recap')) return '📋';
+      if (t.includes('energy') || t.includes('thermo') || t.includes('heat')) return '🔥';
+      if (t.includes('cell') || t.includes('bio') || t.includes('life')) return '🧬';
+      if (t.includes('math') || t.includes('equat') || t.includes('calculat')) return '🧮';
+      if (t.includes('history') || t.includes('time') || t.includes('war')) return '⏳';
+      if (t.includes('country') || t.includes('map') || t.includes('geograph')) return '🌍';
+      return ['⚡','🌟','🔬','📊','🎯','💡','🚀','🌿'][Math.floor(Math.random()*8)];
+    }
+
+    function generateAutoQuestions(scenes, cpNum) {
+      // Extract key terms from content scenes to build auto questions
+      const contentScenes = scenes.filter(s => s.type === 'content' || s.type === 'dialogue');
+      const questions = [];
+
+      contentScenes.slice(0, 4).forEach(s => {
+        const text = (s.body || s.text || '').replace(/<[^>]+>/g,'');
+        const words = text.split(/\s+/).filter(w => w.length > 5);
+        if (words.length < 8) return;
+
+        // Build a fill-in-the-blank style question from the text
+        const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 30);
+        if (!sentences.length) return;
+
+        const sentence = sentences[0].trim();
+        const keyWords = words.filter(w => w.length > 6).slice(0, 4);
+        if (keyWords.length < 2) return;
+
+        const correct = keyWords[0];
+        const wrong1 = keyWords[1] || 'None of these';
+        const wrong2 = keyWords[2] || 'All of the above';
+        const wrong3 = 'Cannot be determined';
+
+        const options = [correct, wrong1, wrong2, wrong3];
+        // Shuffle wrong answers but keep correct at position 0
+        questions.push({
+          q: `Based on this lesson, which of the following is a key concept? "${sentence.substring(0,80)}..."`,
+          options: options,
+          correct: 0,
+          feedback_right: '✓ Correct! You understood that part of the lesson!',
+          feedback_wrong: `The concept from the lesson was: "${correct}"`
+        });
+      });
+
+      // Ensure at least 2 questions
+      while (questions.length < 2) {
+        questions.push({
+          q: `Checkpoint ${cpNum}: Which of the following best describes the main idea of this section?`,
+          options: ['The concept described in the lesson', 'An unrelated topic', 'The opposite of the lesson content', 'None of the above'],
+          correct: 0,
+          feedback_right: '✓ Correct! Keep going!',
+          feedback_wrong: 'The lesson described the concept in the first option.'
+        });
+      }
+
+      return questions.slice(0, 4);
+    }
+
+    function showAdvPreview(lessonData) {
+      const summary = document.getElementById('adv-parse-summary');
+      const preview = document.getElementById('adv-scenes-preview');
+      const chapters = lessonData.scenes.filter(s=>s.type==='chapter').length;
+      const checkpoints = lessonData.scenes.filter(s=>s.type==='checkpoint').length;
+      const dialogues = lessonData.scenes.filter(s=>s.type==='dialogue').length;
+      const content = lessonData.scenes.filter(s=>s.type==='content'||s.type==='two_col'||s.type==='highlight').length;
+
+      summary.innerHTML = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:.75rem;">
+        <div style="text-align:center;background:rgba(0,170,255,.1);border-radius:10px;padding:.5rem;">
+          <div style="font-family:'Fredoka One',cursive;font-size:1.4rem;color:#00aaff;">${chapters}</div>
+          <div style="font-size:.65rem;color:#7a6090;font-weight:700;">CHAPTERS</div>
+        </div>
+        <div style="text-align:center;background:rgba(0,212,170,.1);border-radius:10px;padding:.5rem;">
+          <div style="font-family:'Fredoka One',cursive;font-size:1.4rem;color:#00d4aa;">${dialogues}</div>
+          <div style="font-size:.65rem;color:#7a6090;font-weight:700;">DIALOGUES</div>
+        </div>
+        <div style="text-align:center;background:rgba(255,215,0,.1);border-radius:10px;padding:.5rem;">
+          <div style="font-family:'Fredoka One',cursive;font-size:1.4rem;color:#ffd700;">${content}</div>
+          <div style="font-size:.65rem;color:#7a6090;font-weight:700;">CONTENT</div>
+        </div>
+        <div style="text-align:center;background:rgba(255,105,180,.1);border-radius:10px;padding:.5rem;">
+          <div style="font-family:'Fredoka One',cursive;font-size:1.4rem;color:#ff69b4;">${checkpoints}</div>
+          <div style="font-size:.65rem;color:#7a6090;font-weight:700;">CHECKPOINTS</div>
+        </div>
+      </div>
+      <p style="font-size:.8rem;color:#c9b8e8;font-weight:700;">✅ <strong style="color:#00d4aa;">${lessonData.scenes.length} scenes</strong> generated from your lesson. Preview below:</p>`;
+
+      preview.innerHTML = lessonData.scenes.map((s,i) => {
+        const icons = {chapter:'📖',dialogue:'💬',content:'📋',two_col:'📊',highlight:'💡',checkpoint:'🚩'};
+        const colors = {chapter:'rgba(0,170,255,.2)',dialogue:'rgba(0,212,170,.15)',content:'rgba(255,255,255,.05)',two_col:'rgba(255,215,0,.1)',highlight:'rgba(0,212,170,.1)',checkpoint:'rgba(255,105,180,.15)'};
+        const preview_text = s.title || s.text?.substring(0,60) || s.q?.substring(0,60) || '';
+        return `<div style="display:flex;align-items:center;gap:.75rem;padding:.5rem .75rem;background:${colors[s.type]||'rgba(0,0,0,.2)'};border-radius:8px;margin-bottom:.35rem;font-size:.78rem;font-weight:700;">
+          <span style="flex-shrink:0;">${icons[s.type]||'•'}</span>
+          <span style="color:#7a6090;font-family:'Space Mono',monospace;width:20px;">${i+1}</span>
+          <span style="color:#c9b8e8;text-transform:uppercase;font-size:.65rem;width:70px;flex-shrink:0;">${s.type}</span>
+          <span style="color:#fffde7;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${preview_text}</span>
+        </div>`;
+      }).join('');
+    }
+
+    async function deployAdventure() {
+      const title = document.getElementById('adv-title').value.trim() || parsedLessonData?.title || 'Adventure Lesson';
+      const subject = document.getElementById('adv-subject').value.trim() || parsedLessonData?.subject || '';
+      if (!parsedLessonData) { showToast('Upload an HTML lesson first!', 'error'); return; }
+      const sections = [...document.getElementById('adv-sections').selectedOptions].map(o=>o.value);
+
+      const btn = document.getElementById('deploy-adv-btn');
+      btn.textContent = '⏳ Saving...'; btn.disabled = true;
+
+      parsedLessonData.title = title;
+      parsedLessonData.subject = subject;
+      const lessonJSON = JSON.stringify(parsedLessonData);
+      const quizId = String(Date.now());
+
+      // Save to localStorage immediately
+      const quizRecord = {
+        id: quizId, title, subject, time: 30, sections,
+        category: 'adventure',
+        questions: JSON.stringify([{question:'HTML_LESSON',options:['Start'],correct:0}]),
+        locked: false, lessonType: 'html',
+        createdAt: new Date().toISOString()
+      };
+      const quizzes = JSON.parse(localStorage.getItem('s_quizzes')||'[]');
+      quizzes.push(quizRecord);
+      localStorage.setItem('s_quizzes', JSON.stringify(quizzes));
+      localStorage.setItem('adventure_lesson_' + quizId, lessonJSON);
+
+      // Save to Supabase
+      let cloudSaved = false;
+      try {
+        btn.textContent = '☁️ Saving to Supabase...';
+        // Step 1: Save quiz metadata
+        await saveQuiz({
+          id: quizId, title, subject, time: 30, sections,
+          category: 'adventure', locked: false,
+          questions: [{question:'HTML_LESSON',options:['Start'],correct:0}],
+          createdAt: new Date().toISOString()
+        });
+        // Step 2: Save lesson data
+        btn.textContent = '☁️ Uploading lesson data...';
+        const lessonRes = await saveLesson(quizId, lessonJSON);
+        cloudSaved = lessonRes.ok;
+        if (!cloudSaved) console.warn('Lesson save error:', lessonRes.error);
+      } catch(e) {
+        console.warn('Cloud save error:', e.message);
+      }
+
+      btn.textContent = '🗺️ Deploy Adventure!'; btn.disabled = false;
+      const cloudMsg = apiUrl ? ' Syncing to cloud...' : ' (Saved locally)';
+      showToast(`🗺️ "${title}" deployed! ${parsedLessonData.scenes.length} scenes ready!${cloudMsg}`, 'success');
+      clearAdvHTML();
+      document.getElementById('adv-title').value = '';
+      document.getElementById('adv-subject').value = '';
+      setTimeout(()=>showTab('quizzes'), 1800);
+    }
+
+    function clearAdvHTML() {
+      adventureHTML = null;
+      parsedLessonData = null;
+      document.getElementById('adv-preview').classList.add('hidden');
+      document.getElementById('adv-html-input').value = '';
+    }
+
+    // Keep legacy PDF functions as no-ops to avoid errors
+    function handlePDFUpload(input) {}
+    function clearPDF() {}
+
+    /* ══ TRAINING CAMP DEPLOY (Flappy Bird) ══ */
+    function handleTrainingUpload(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        parsedQuestionsTC = parseQuizHTML(e.target.result);
+        if (!parsedQuestionsTC.length) { showToast('Could not detect questions. Check the HTML format.', 'error'); return; }
+        document.getElementById('tc-q-count').textContent = parsedQuestionsTC.length + ' questions';
+        const prev = document.getElementById('tc-questions-preview');
+        prev.innerHTML = parsedQuestionsTC.slice(0,5).map((q,i) => `
+          <div class="question-preview">
+            <strong style="font-size:0.8rem;color:var(--jake-yellow);">Q${i+1}.</strong> ${q.question}
+            <div style="margin-top:0.4rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+              ${q.options.map((o,oi)=>`<span class="badge ${oi===q.correct?'badge-gold':'badge-gray'}">${String.fromCharCode(65+oi)}) ${o.substring(0,30)}${o.length>30?'…':''}</span>`).join('')}
+            </div></div>`).join('') + (parsedQuestionsTC.length>5?`<p style="color:var(--text-muted);font-size:0.8rem;text-align:center;padding:0.5rem;">... and ${parsedQuestionsTC.length-5} more questions</p>`:'');
+        document.getElementById('tc-preview').classList.remove('hidden');
+        showToast(`Parsed ${parsedQuestionsTC.length} training questions!`, 'success');
+      };
+      reader.readAsText(file);
+    }
+
+    // TC drag/drop
+    const tcZone = document.getElementById('tc-upload-zone');
+    if (tcZone) {
+      tcZone.addEventListener('dragover',e=>{e.preventDefault();tcZone.classList.add('drag-over');});
+      tcZone.addEventListener('dragleave',()=>tcZone.classList.remove('drag-over'));
+      tcZone.addEventListener('drop',e=>{e.preventDefault();tcZone.classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f){const inp=document.getElementById('tc-input');const dt=new DataTransfer();dt.items.add(f);inp.files=dt.files;handleTrainingUpload(inp);}});
+    }
+
+    function deployTraining() {
+      const title = document.getElementById('tc-title').value.trim();
+      const subject = document.getElementById('tc-subject').value.trim();
+      const time = parseInt(document.getElementById('tc-time').value)||15;
+      if (!title) { showToast('Enter a training title!', 'error'); return; }
+      if (!parsedQuestionsTC.length) { showToast('No questions to deploy!', 'error'); return; }
+      const sections = [...document.getElementById('tc-sections').selectedOptions].map(o=>o.value);
+      saveQuiz({ title, subject, time, sections, category:'training', questions: parsedQuestionsTC, locked: false });
+      showToast(`Training Camp "${title}" deployed! Time to flap! 🐦`, 'success');
+      clearTraining();
+      document.getElementById('tc-title').value = '';
+      document.getElementById('tc-subject').value = '';
+    }
+
+    function clearTraining() { parsedQuestionsTC=[]; document.getElementById('tc-preview').classList.add('hidden'); document.getElementById('tc-input').value=''; }
+
+    /* ══ ARENA DEPLOY (Game Show / Summative) ══ */
+    function handleArenaUpload(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        parsedQuestionsArena = parseQuizHTML(e.target.result);
+        if (!parsedQuestionsArena.length) { showToast('Could not detect questions. Check the HTML format.', 'error'); return; }
+        document.getElementById('arena-q-count').textContent = parsedQuestionsArena.length + ' questions';
+        const prev = document.getElementById('arena-questions-preview');
+        prev.innerHTML = parsedQuestionsArena.slice(0,5).map((q,i)=>`
+          <div class="question-preview">
+            <strong style="font-size:0.8rem;color:var(--princess-pink);">Q${i+1}.</strong> ${q.question}
+            <div style="margin-top:0.4rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+              ${q.options.map((o,oi)=>`<span class="badge ${oi===q.correct?'badge-magenta':'badge-gray'}">${String.fromCharCode(65+oi)}) ${o.substring(0,30)}${o.length>30?'…':''}</span>`).join('')}
+            </div></div>`).join('') + (parsedQuestionsArena.length>5?`<p style="color:var(--text-muted);font-size:0.8rem;text-align:center;padding:0.5rem;">... and ${parsedQuestionsArena.length-5} more questions</p>`:'');
+        document.getElementById('arena-preview').classList.remove('hidden');
+        showToast(`Parsed ${parsedQuestionsArena.length} arena questions!`, 'success');
+      };
+      reader.readAsText(file);
+    }
+
+    const arenaZone = document.getElementById('arena-upload-zone');
+    if (arenaZone) {
+      arenaZone.addEventListener('dragover',e=>{e.preventDefault();arenaZone.classList.add('drag-over');});
+      arenaZone.addEventListener('dragleave',()=>arenaZone.classList.remove('drag-over'));
+      arenaZone.addEventListener('drop',e=>{e.preventDefault();arenaZone.classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f){const inp=document.getElementById('arena-input');const dt=new DataTransfer();dt.items.add(f);inp.files=dt.files;handleArenaUpload(inp);}});
+    }
+
+    function deployArena() {
+      const title = document.getElementById('arena-title').value.trim();
+      const subject = document.getElementById('arena-subject').value.trim();
+      const time = parseInt(document.getElementById('arena-time').value)||30;
+      if (!title) { showToast('Enter an arena battle title!', 'error'); return; }
+      if (!parsedQuestionsArena.length) { showToast('No questions to deploy!', 'error'); return; }
+      const sections = [...document.getElementById('arena-sections').selectedOptions].map(o=>o.value);
+      saveQuiz({ title, subject, time, sections, category:'assessment', questions: parsedQuestionsArena, locked: false });
+      showToast(`Arena Battle "${title}" deployed! Let the showdown begin! 🏟️`, 'success');
+      clearArena();
+      document.getElementById('arena-title').value = '';
+      document.getElementById('arena-subject').value = '';
+    }
+
+    function clearArena() { parsedQuestionsArena=[]; document.getElementById('arena-preview').classList.add('hidden'); document.getElementById('arena-input').value=''; }
+
+    /* ══ QUEST PORTAL ══ */
+    let _portalQuizzes = [], _portalScores = [];
+
+    async function resyncAllQuizzes() {
+      let local = getQuizzes();
+      if (!local.length) { showToast('No local quizzes found. Try uploading one first.', 'error'); return; }
+      const statusEl = document.getElementById('sync-status');
+      statusEl.style.display = 'block';
+      statusEl.textContent = `Syncing ${local.length} quest(s) to Google Sheets...`;
+      let synced = 0;
+      for (const q of local) {
+        const saved = await saveQuiz(q); const r = { ok: !!saved };
+        if (r.ok || r.error==='duplicate') synced++;
+        statusEl.textContent = `Syncing... ${synced}/${local.length}`;
+      }
+      statusEl.textContent = `✅ Synced ${synced}/${local.length} quests!`;
+      showToast(`${synced} quest(s) synced to Sheets! ☁`, 'success');
+      setTimeout(()=>{statusEl.style.display='none';renderQuizPortal();}, 4000);
+    }
+
+    async function renderQuizPortal() {
+      const list = document.getElementById('quiz-portal-list');
+      showLoading(list, 'Loading quests from the cloud...');
+      const [_quizzes, allScores] = await Promise.all([getQuizzes(), getScores()]); const sheetsResult = { ok: true, quizzes: _quizzes };
+      _portalScores = allScores;
+      const sheetsQuizzes = sheetsResult.ok && sheetsResult.quizzes ? sheetsResult.quizzes.map(q=>{
+        if(typeof q.questions==='string'){try{q.questions=JSON.parse(q.questions);}catch{q.questions=[];}}
+        if(typeof q.sections==='string') q.sections=q.sections.split(',').map(s=>s.trim());
+        return q;
+      }) : [];
+      const localQuizzes = getQuizzes();
+      const sheetIds = new Set(sheetsQuizzes.map(q=>String(q.id)));
+      const merged = [...sheetsQuizzes, ...localQuizzes.filter(q=>!sheetIds.has(String(q.id)))];
+      _portalQuizzes = merged;
+      if (!merged.length) { list.innerHTML='<div class="empty-state"><span>🏰</span>No quests deployed yet. Use Deploy Hub!</div>'; return; }
+      const catIcon = c => c==='adventure'||c==='lesson'?'🗺️':c==='training'?'🐦':'🏟️';
+      const catLabel = c => c==='adventure'||c==='lesson'?'Adventure':c==='training'?'Training':'Arena';
+      const catBadge = c => c==='adventure'||c==='lesson'?'badge-cyan':c==='training'?'badge-gold':'badge-magenta';
+      list.innerHTML = merged.slice().reverse().map(q=>{
+        const cat = q.category || 'practice';
+        const attempts = _portalScores.filter(s=>String(s.quizId)==String(q.id)).length;
+        const avg = attempts ? Math.round(_portalScores.filter(s=>String(s.quizId)==String(q.id)).reduce((a,b)=>a+(b.score/b.total*100),0)/attempts):0;
+        const qLen = Array.isArray(q.questions)?q.questions.length:0;
+        return `<div class="quiz-list-item glass-card" style="margin-bottom:1rem;padding:1.25rem;">
+          <span style="font-size:2rem;">${catIcon(cat)}</span>
+          <div class="quiz-meta" style="flex:1;">
+            <h4 style="font-size:1rem;font-weight:700;">${q.title}</h4>
+            <p>${q.subject||'General'} · ${qLen} questions · ${q.time}min · Sections: ${(q.sections||[]).join(', ')}</p>
+            <p style="margin-top:0.35rem;display:flex;align-items:center;gap:0.5rem;">
+              <span class="badge ${catBadge(cat)}">${catIcon(cat)} ${catLabel(cat)}</span>
+              <span style="color:var(--text-muted);font-size:0.78rem;font-weight:700;">${attempts} attempt(s) · Avg: ${avg}%</span>
+            </p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:flex-end;">
+            <span class="badge ${q.locked?'badge-gray':'badge-green'}">${q.locked?'🔒 Locked':'🔓 Active'}</span>
+            <div style="display:flex;gap:0.5rem;">
+              <button class="btn btn-ghost btn-sm" onclick="toggleQuizLock('${q.id}')">${q.locked?'🔓 Unlock':'🔒 Lock'}</button>
+              <button class="btn btn-ghost btn-sm" onclick="previewQuiz('${q.id}')">👁 Preview</button>
+              <button class="btn btn-ghost btn-sm" onclick="downloadQuizScores('${q.id}')">⬇ Export</button>
+            </div>
+          </div></div>`;
+      }).join('');
+    }
+
+    async function toggleQuizLock(id) {
+      const q = _portalQuizzes.find(q=>String(q.id)===String(id));
+      if (!q) return;
+      updateQuiz(id, { locked: !q.locked });
+      showToast(!q.locked?'Quest locked 🔒':'Quest unlocked 🔓');
+      renderQuizPortal();
+    }
+
+    function previewQuiz(id) { window.open(`quiz-play.html?id=${id}&preview=1`,'_blank'); }
+
+    async function downloadQuizScores(id) {
+      const q = _portalQuizzes.find(q=>String(q.id)===String(id));
+      const scores = _portalScores.filter(s=>String(s.quizId)==String(id));
+      if (!scores.length) { showToast('No scores for this quest yet','error'); return; }
+      const csv = ['Hero,Email,Section,Score,Total,Percent,Tab Switches,Date',
+        ...scores.map(s=>`"${s.name}","${s.email}","${s.section}",${s.score},${s.total},${Math.round(s.score/s.total*100)}%,${s.tabSwitches||0},"${formatDate(s.createdAt)}"`)
+      ].join('\n');
+      downloadCSV(csv, `${q?.title||'quest'}-scores.csv`);
+    }
+
+    /* ══ RECORDS ══ */
+    let _allScores = [], _activeSection = 'all';
+
+    async function renderRecords() {
+      document.getElementById('records-body').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);"><div class="spinner" style="margin:0 auto;"></div></td></tr>';
+      document.getElementById('records-summary').innerHTML = '';
+      _allScores = await getScores();
+
+      // Debug: log what we got
+      console.log('Records loaded from Sheets:', _allScores.length, 'scores');
+      if (_allScores.length > 0) {
+        const sections = [...new Set(_allScores.map(s=>s.section||''))];
+        const cats = [...new Set(_allScores.map(s=>s.category||''))];
+        console.log('Sections found:', sections);
+        console.log('Categories found:', cats);
+        console.log('Sample score:', _allScores[0]);
+      }
+
+      const quizSel = document.getElementById('records-quiz-filter');
+      const currentQuiz = quizSel.value;
+      const quizMap = new Map();
+      _allScores.forEach(s => {
+        if (s.quizId && !quizMap.has(String(s.quizId))) {
+          quizMap.set(String(s.quizId), s.quizTitle || 'Quest #' + s.quizId);
+        }
+      });
+      quizSel.innerHTML = '<option value="all">All Quests</option>' +
+        [...quizMap.entries()].map(([id,title])=>`<option value="${id}">${title}</option>`).join('');
+      if (currentQuiz && currentQuiz!=='all') quizSel.value = currentQuiz;
+      applyRecordFilters();
+    }
+
+    function setSection(sec, btn) {
+      _activeSection = sec;
+      document.querySelectorAll('.rec-sec-btn').forEach(b=>{b.classList.remove('active-sec');});
+      btn.classList.add('active-sec');
+      applyRecordFilters();
+    }
+
+    function applyRecordFilters() {
+      const search = (document.getElementById('records-search')?.value||'').toLowerCase();
+      const quizId = document.getElementById('records-quiz-filter')?.value||'all';
+      const cat    = document.getElementById('records-cat-filter')?.value||'all';
+      const sortBy = document.getElementById('records-sort')?.value||'date-desc';
+      let scores = _allScores.slice();
+      // Section filter — case-insensitive, trimmed
+      if (_activeSection!=='all') {
+        scores=scores.filter(s=>{
+          const sec=(s.section||'').trim().toUpperCase();
+          const active=_activeSection.trim().toUpperCase();
+          return sec===active || sec.includes(active) || active.includes(sec);
+        });
+      }
+      // Quiz filter — match by quizId OR quizTitle
+      if (quizId!=='all') scores=scores.filter(s=>String(s.quizId)===String(quizId)||s.quizTitle===quizId);
+      // Category filter — match all known aliases
+      if (cat!=='all') {
+        scores=scores.filter(s=>{
+          const c=(s.category||'practice').toLowerCase().trim();
+          if(cat==='adventure') return ['adventure','lesson'].includes(c);
+          if(cat==='practice') return ['practice','training','train'].includes(c);
+          if(cat==='assessment') return ['assessment','arena','assess'].includes(c);
+          return c===cat;
+        });
+      }
+      if (search) scores=scores.filter(s=>(s.name||'').toLowerCase().includes(search)||(s.quizTitle||'').toLowerCase().includes(search)||(s.email||'').toLowerCase().includes(search));
+      const safeDate = d => { const t=new Date(d).getTime(); return isNaN(t)?0:t; };
+      scores.sort((a,b)=>{
+        if(sortBy==='date-desc') return safeDate(b.createdAt)-safeDate(a.createdAt);
+        if(sortBy==='date-asc')  return safeDate(a.createdAt)-safeDate(b.createdAt);
+        if(sortBy==='score-desc') return ((b.score||0)/(b.total||1))-((a.score||0)/(a.total||1));
+        if(sortBy==='score-asc')  return ((a.score||0)/(a.total||1))-((b.score||0)/(b.total||1));
+        if(sortBy==='name-asc')  return (a.name||'').localeCompare(b.name||'');
+        return 0;
+      });
+      const total=scores.length, avg=total?Math.round(scores.reduce((s,r)=>s+(r.total>0?(r.score/r.total*100):0),0)/total):0;
+      const perfect=scores.filter(s=>s.score===s.total).length, flagged=scores.filter(s=>(s.tabSwitches||0)>0).length;
+      document.getElementById('records-summary').innerHTML=`
+        <div class="stat-card"><div class="stat-value" style="font-size:1.5rem;">${total}</div><div class="stat-label">Submissions</div></div>
+        <div class="stat-card"><div class="stat-value" style="font-size:1.5rem;color:var(--jake-yellow);">${avg}%</div><div class="stat-label">Avg Score</div></div>
+        <div class="stat-card"><div class="stat-value" style="font-size:1.5rem;color:var(--bmo-teal);">${perfect}</div><div class="stat-label">Perfect Scores</div></div>
+        <div class="stat-card"><div class="stat-value" style="font-size:1.5rem;color:${flagged>0?'#ff6666':'var(--bmo-teal)'};">${flagged}</div><div class="stat-label">Tab Switches ⚠</div></div>`;
+      const tbody = document.getElementById('records-body');
+      if (!scores.length) { tbody.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:2.5rem;color:var(--text-muted);">No records match current filters</td></tr>`; document.getElementById('records-count').textContent=''; return; }
+      const catIcon = c => c==='adventure'||c==='lesson'?'🗺️':c==='training'?'🐦':'🏟️';
+      tbody.innerHTML = scores.map(s=>{
+        const pct=s.total>0?Math.round((s.score||0)/s.total*100):0;
+        const color=pct>=90?'badge-green':pct>=75?'badge-cyan':pct>=50?'badge-gold':'badge-magenta';
+        const tabs=s.tabSwitches||0;
+        const cat=s.category||'practice';
+        return `<tr>
+          <td><div style="font-weight:700;">${s.name||'—'}</div><div style="font-size:0.72rem;color:var(--text-muted);">${s.email||''}</div></td>
+          <td><span class="badge badge-gray">${s.section||'—'}</span></td>
+          <td style="max-width:180px;font-size:0.85rem;font-weight:600;">${s.quizTitle||s.quizId||'Quest'}</td>
+          <td><span class="badge ${cat==='assessment'||cat==='arena'?'badge-magenta':cat==='adventure'||cat==='lesson'?'badge-cyan':'badge-gold'}" style="font-size:0.65rem;">${catIcon(cat)}</span></td>
+          <td><span class="badge ${color}">${s.score}/${s.total} (${pct}%)</span></td>
+          <td style="color:${tabs>0?'#ff6666':'var(--text-muted)'};">${tabs>0?`⚠ ${tabs}`:tabs}</td>
+          <td style="font-size:0.82rem;color:var(--text-secondary);">${formatDate(s.createdAt)}</td>
+          <td style="color:var(--finn-blue);font-family:'Fredoka One',cursive;font-size:0.9rem;">+${Math.round((s.score/s.total)*50)}</td>
+        </tr>`;
+      }).join('');
+      document.getElementById('records-count').textContent=`Showing ${scores.length} of ${_allScores.length} record${_allScores.length!==1?'s':''}`;
+    }
+
+    async function downloadRecords() {
+      if (!_allScores.length) _allScores = await getScores();
+      const search=(document.getElementById('records-search')?.value||'').toLowerCase();
+      const quizId=document.getElementById('records-quiz-filter')?.value||'all';
+      const cat=document.getElementById('records-cat-filter')?.value||'all';
+      let scores=_allScores.slice();
+      if(_activeSection!=='all') scores=scores.filter(s=>s.section===_activeSection);
+      if(quizId!=='all') scores=scores.filter(s=>String(s.quizId)===String(quizId));
+      if(cat!=='all') scores=scores.filter(s=>(s.category||'practice')===cat);
+      if(search) scores=scores.filter(s=>(s.name||'').toLowerCase().includes(search)||(s.quizTitle||'').toLowerCase().includes(search));
+      if(!scores.length){showToast('No records to export','error');return;}
+      const csv=['Hero,Email,Section,Quest,Category,Score,Total,Percent,Tab Switches,Date',
+        ...scores.map(s=>`"${s.name}","${s.email}","${s.section}","${s.quizTitle||''}","${s.category||'practice'}",${s.score},${s.total},${Math.round(s.score/s.total*100)}%,${s.tabSwitches||0},"${formatDate(s.createdAt)}"`)
+      ].join('\n');
+      downloadCSV(csv,'records.csv');
+      showToast(`Exported ${scores.length} record(s) ✓`,'success');
+    }
+
+    function downloadCSV(csv, filename) {
+      const blob=new Blob([csv],{type:'text/csv'});
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+    }
+
+    function doLogout() { clearSession(); window.location.href='index.html'; }
+
+    // Clock
+    function updateClock() {
+      const now=new Date();
+      document.getElementById('nav-time').textContent=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    }
+    setInterval(updateClock,1000); updateClock();
+  </script>
+</body>
+</html>

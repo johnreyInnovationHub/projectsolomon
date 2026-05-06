@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Project Solomon — Adventure Lesson</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Nunito',sans-serif;background:#0d0618;color:#fffde7;min-height:100vh;overflow-x:hidden;}
+.ooo-bg{position:fixed;inset:0;background:linear-gradient(180deg,#0d0618 0%,#1a0a2e 50%,#0a1a3d 100%);z-index:0;}
+.star{position:fixed;border-radius:50%;background:white;animation:twinkle linear infinite;}
+@keyframes twinkle{0%,100%{opacity:.15}50%{opacity:.9}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes sceneIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes xpRise{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-50px)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.5rem;background:rgba(13,6,24,.95);border-bottom:2px solid rgba(0,170,255,.2);backdrop-filter:blur(20px);gap:1rem;flex-wrap:wrap;}
+.exit-btn{padding:.35rem .9rem;border-radius:50px;border:2px solid rgba(255,68,68,.4);background:rgba(255,68,68,.1);color:#ff6666;font-family:'Nunito',sans-serif;font-size:.78rem;font-weight:800;cursor:pointer;}
+.exit-btn:hover{background:rgba(255,68,68,.25);}
+.lesson-title-bar{font-family:'Fredoka One',cursive;font-size:.9rem;color:#fffde7;flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.xp-pill{font-family:'Fredoka One',cursive;font-size:.85rem;padding:.3rem .8rem;border-radius:50px;background:rgba(255,215,0,.12);border:2px solid rgba(255,215,0,.3);color:#ffd700;white-space:nowrap;}
+.progress-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
+.progress-bar-outer{width:130px;height:7px;background:rgba(0,0,0,.4);border-radius:7px;overflow:hidden;border:1px solid rgba(0,170,255,.2);}
+.progress-bar-inner{height:100%;background:linear-gradient(90deg,#00aaff,#00d4aa);border-radius:7px;transition:width .6s ease;}
+.progress-label{font-family:'Space Mono',monospace;font-size:.62rem;color:#7a6090;}
+
+.stage{position:relative;z-index:1;max-width:820px;margin:0 auto;padding:0 1.25rem 5rem;}
+
+/* Loading */
+#loading-overlay{position:fixed;inset:0;background:#0d0618;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;}
+.spinner{width:50px;height:50px;border:4px solid rgba(0,170,255,.2);border-top-color:#00aaff;border-radius:50%;animation:spin .8s linear infinite;}
+.loading-steps{display:flex;flex-direction:column;gap:.4rem;margin-top:.5rem;max-width:300px;width:100%;}
+.loading-step{font-size:.8rem;font-weight:700;color:#7a6090;padding:.3rem .5rem;border-radius:8px;transition:all .3s;}
+.loading-step.active{color:#00aaff;background:rgba(0,170,255,.08);}
+.loading-step.done{color:#00d4aa;}
+.loading-bar-outer{width:300px;height:6px;background:rgba(0,0,0,.4);border-radius:6px;overflow:hidden;margin-top:.5rem;}
+.loading-bar-inner{height:100%;background:linear-gradient(90deg,#00aaff,#00d4aa);border-radius:6px;transition:width .8s ease;width:0%;}
+
+/* Scene */
+.scene{display:none;animation:sceneIn .5s ease forwards;}
+.scene.active{display:block;}
+
+/* Chapter banner */
+.chapter-banner{text-align:center;padding:2.5rem 1rem;margin:2rem 0 1.5rem;}
+.chapter-icon{font-size:4.5rem;display:block;margin-bottom:1rem;animation:float 3s ease-in-out infinite;}
+.chapter-num{font-family:'Space Mono',monospace;font-size:.65rem;letter-spacing:.3em;color:#00d4aa;text-transform:uppercase;margin-bottom:.4rem;}
+.chapter-title{font-family:'Fredoka One',cursive;font-size:clamp(1.5rem,5vw,2.4rem);background:linear-gradient(135deg,#fffde7,#00aaff,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.15;margin-bottom:.6rem;}
+.chapter-sub{color:#c9b8e8;font-size:.92rem;font-weight:700;max-width:460px;margin:0 auto;}
+
+/* Dialogue */
+.dialogue-block{display:flex;align-items:flex-end;gap:1rem;margin:1.5rem 0;}
+.dialogue-block.right{flex-direction:row-reverse;}
+.char-wrap{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:.25rem;}
+.char-avatar{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;border:3px solid;flex-shrink:0;}
+.char-name{font-size:.6rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;}
+.finn .char-avatar{background:linear-gradient(135deg,#0055aa,#00aaff);border-color:#00d4aa;box-shadow:0 0 16px rgba(0,212,170,.4);}
+.finn .char-name{color:#00d4aa;}
+.jake .char-avatar{background:linear-gradient(135deg,#ff8c00,#ffd700);border-color:#ffd700;box-shadow:0 0 16px rgba(255,215,0,.4);}
+.jake .char-name{color:#ffd700;}
+.bmo .char-avatar{background:linear-gradient(135deg,#00d4aa,#0099aa);border-color:#00aaff;box-shadow:0 0 16px rgba(0,170,255,.4);}
+.bmo .char-name{color:#00aaff;}
+.speech-bubble{position:relative;background:rgba(74,14,143,.35);border:2px solid rgba(0,170,255,.25);border-radius:18px;padding:1rem 1.25rem;flex:1;font-size:.9rem;font-weight:700;line-height:1.65;color:#fffde7;max-width:520px;}
+.speech-bubble.left-tail::after{content:'';position:absolute;bottom:16px;left:-10px;width:0;height:0;border-top:10px solid transparent;border-bottom:10px solid transparent;border-right:10px solid rgba(0,170,255,.25);}
+.speech-bubble.right-tail::after{content:'';position:absolute;bottom:16px;right:-10px;width:0;height:0;border-top:10px solid transparent;border-bottom:10px solid transparent;border-left:10px solid rgba(0,170,255,.25);}
+.speech-bubble em{color:#00d4aa;font-style:normal;font-weight:900;}
+.speech-bubble strong{color:#ffd700;}
+
+/* Content card */
+.content-card{background:rgba(74,14,143,.18);border:2px solid rgba(0,170,255,.2);border-radius:20px;padding:1.5rem;margin:1.25rem 0;}
+.content-card h3{font-family:'Fredoka One',cursive;font-size:1.05rem;margin-bottom:.75rem;color:#00aaff;}
+.content-card p{font-size:.88rem;font-weight:700;line-height:1.7;color:#e8deff;}
+.formula-box{background:rgba(0,0,0,.4);border:2px solid rgba(0,170,255,.3);border-radius:10px;padding:.6rem 1rem;font-family:'Space Mono',monospace;font-size:.85rem;color:#00aaff;margin-top:.75rem;text-align:center;}
+
+/* Two col */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.25rem 0;}
+.col-card{border-radius:16px;padding:1.2rem;}
+.col-card.exo{background:rgba(200,30,30,.15);border:2px solid rgba(200,30,30,.35);}
+.col-card.endo{background:rgba(30,100,200,.15);border:2px solid rgba(30,100,200,.35);}
+.col-card.blue{background:rgba(0,170,255,.1);border:2px solid rgba(0,170,255,.3);}
+.col-card.purple{background:rgba(130,50,200,.15);border:2px solid rgba(130,50,200,.35);}
+.col-card h4{font-family:'Fredoka One',cursive;font-size:.95rem;margin-bottom:.65rem;}
+.col-card.exo h4{color:#ff7777;}
+.col-card.endo h4{color:#77aaff;}
+.col-card.blue h4{color:#00aaff;}
+.col-card.purple h4{color:#bb88ff;}
+.col-card ul{list-style:none;display:flex;flex-direction:column;gap:.45rem;}
+.col-card li{font-size:.8rem;font-weight:700;color:#e8deff;padding-left:1.2rem;position:relative;line-height:1.5;}
+.col-card li::before{content:'•';position:absolute;left:0;}
+.col-card.exo li::before{color:#ff7777;}
+.col-card.endo li::before{color:#77aaff;}
+.col-card.blue li::before{color:#00aaff;}
+.col-card.purple li::before{color:#bb88ff;}
+
+/* Highlight */
+.highlight-box{border-radius:14px;padding:1rem 1.25rem;margin:1.25rem 0;display:flex;align-items:flex-start;gap:.75rem;}
+.hb-icon{font-size:1.5rem;flex-shrink:0;margin-top:.1rem;}
+.hb-text{font-size:.87rem;font-weight:700;line-height:1.6;}
+.hb-label{font-family:'Fredoka One',cursive;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.25rem;}
+.hb-cyan{background:rgba(0,170,255,.1);border:2px solid rgba(0,170,255,.3);}
+.hb-cyan .hb-label{color:#00aaff;}
+.hb-gold{background:rgba(255,215,0,.08);border:2px solid rgba(255,215,0,.3);}
+.hb-gold .hb-label{color:#ffd700;}
+.hb-green{background:rgba(0,212,170,.08);border:2px solid rgba(0,212,170,.3);}
+.hb-green .hb-label{color:#00d4aa;}
+
+/* Checkpoint */
+.checkpoint-header{text-align:center;padding:1.5rem 1rem 1rem;margin:1.5rem 0 1rem;}
+.checkpoint-badge{display:inline-flex;align-items:center;gap:.5rem;padding:.4rem 1.2rem;border-radius:50px;background:rgba(255,215,0,.1);border:2px solid rgba(255,215,0,.4);font-family:'Fredoka One',cursive;font-size:.78rem;letter-spacing:.1em;color:#ffd700;margin-bottom:.65rem;}
+.checkpoint-title{font-family:'Fredoka One',cursive;font-size:1.3rem;color:#fffde7;}
+.checkpoint-sub{color:#c9b8e8;font-size:.82rem;font-weight:700;margin-top:.3rem;}
+.cp-question{background:rgba(74,14,143,.22);border:2px solid rgba(0,170,255,.2);border-radius:16px;padding:1.2rem;margin:.65rem 0;}
+.cp-q-text{font-size:.92rem;font-weight:800;line-height:1.6;margin-bottom:.85rem;color:#fffde7;}
+.cp-options{display:flex;flex-direction:column;gap:.45rem;}
+.cp-opt{padding:.75rem 1rem;border-radius:12px;border:2px solid rgba(0,170,255,.2);background:rgba(0,0,0,.3);color:#fffde7;font-family:'Nunito',sans-serif;font-size:.86rem;font-weight:800;text-align:left;cursor:pointer;transition:all .2s;}
+.cp-opt:hover:not(:disabled){border-color:#00aaff;background:rgba(0,170,255,.1);transform:translateX(3px);}
+.cp-opt.correct{border-color:#00d4aa!important;background:rgba(0,212,170,.15)!important;color:#00d4aa;}
+.cp-opt.wrong{border-color:#ff4444!important;background:rgba(255,68,68,.1)!important;color:#ff6666;}
+.cp-opt:disabled{cursor:not-allowed;}
+.cp-feedback{margin-top:.65rem;padding:.7rem 1rem;border-radius:10px;font-size:.82rem;font-weight:800;display:none;}
+.cp-feedback.show{display:block;}
+.cp-feedback.correct-fb{background:rgba(0,212,170,.08);border-left:3px solid #00d4aa;color:#00d4aa;}
+.cp-feedback.wrong-fb{background:rgba(255,68,68,.08);border-left:3px solid #ff4444;color:#ff6666;}
+.cp-result{text-align:center;padding:1.5rem;margin:1rem 0;background:rgba(74,14,143,.25);border:2px solid rgba(0,170,255,.2);border-radius:16px;display:none;}
+.cp-result.show{display:block;}
+.cp-result-score{font-family:'Fredoka One',cursive;font-size:2.2rem;margin:.4rem 0;}
+.cp-result-msg{font-weight:700;font-size:.88rem;color:#c9b8e8;margin-top:.4rem;}
+
+/* Nav */
+.nav-row{display:flex;justify-content:center;gap:1rem;margin:2rem 0 1rem;}
+.nav-btn{padding:.8rem 2rem;border-radius:50px;font-family:'Fredoka One',cursive;font-size:1rem;letter-spacing:.04em;cursor:pointer;border:none;transition:all .25s;}
+.nav-btn.primary{background:linear-gradient(135deg,#00aaff,#0055aa);color:white;box-shadow:0 4px 20px rgba(0,170,255,.4);}
+.nav-btn.primary:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,170,255,.6);}
+.nav-btn.secondary{background:transparent;color:#c9b8e8;border:2px solid rgba(0,170,255,.25);}
+.nav-btn.secondary:hover{background:rgba(0,170,255,.1);}
+.nav-btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important;}
+
+/* Complete */
+.complete-wrap{text-align:center;padding:3rem 1rem;animation:sceneIn .5s ease;}
+.complete-star{font-size:5rem;display:block;animation:float 2s ease-in-out infinite;}
+.complete-title{font-family:'Fredoka One',cursive;font-size:2rem;background:linear-gradient(135deg,#ffd700,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:.75rem 0 .5rem;}
+.complete-sub{color:#c9b8e8;font-size:.92rem;font-weight:700;margin-bottom:1.75rem;}
+.xp-earned{font-family:'Fredoka One',cursive;font-size:2.8rem;color:#ffd700;text-shadow:0 0 25px rgba(255,215,0,.6);}
+.xp-label{font-size:.82rem;color:#7a6090;font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
+.grade-label{font-family:'Fredoka One',cursive;font-size:1.1rem;color:#ffd700;margin:1rem 0;}
+.key-takeaways{text-align:left;background:rgba(74,14,143,.22);border:2px solid rgba(0,170,255,.2);border-radius:16px;padding:1.5rem;margin:1.5rem 0;}
+.key-takeaways h3{font-family:'Fredoka One',cursive;font-size:1rem;color:#00aaff;margin-bottom:.75rem;}
+.key-takeaways li{font-size:.85rem;font-weight:700;color:#e8deff;line-height:1.6;padding-left:1.4rem;position:relative;margin-bottom:.45rem;}
+.key-takeaways li::before{content:'⚡';position:absolute;left:0;font-size:.72rem;}
+
+/* XP flash */
+.xp-flash{position:fixed;top:80px;right:2rem;font-family:'Fredoka One',cursive;font-size:1.2rem;color:#00d4aa;text-shadow:0 0 12px rgba(0,212,170,.8);pointer-events:none;z-index:9999;animation:xpRise 1.2s ease forwards;}
+#toast{position:fixed;bottom:2rem;right:2rem;background:rgba(26,10,46,.98);border:2px solid #00d4aa;border-radius:14px;padding:.9rem 1.4rem;color:#fffde7;font-size:.88rem;font-weight:700;z-index:9999;transform:translateX(120%);transition:transform .4s cubic-bezier(.34,1.56,.64,1);max-width:280px;}
+#toast.show{transform:translateX(0);}
+#toast.error{border-color:#ff4444;}
+
+@media(max-width:600px){.two-col{grid-template-columns:1fr;}.stage{padding:0 .75rem 4rem;}.progress-bar-outer{width:80px;}}
+</style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/app.js"></script>
+</head>
+<body>
+<div class="ooo-bg"></div>
+<div id="toast"></div>
+
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay">
+  <div style="font-family:'Fredoka One',cursive;font-size:1.3rem;color:#c9b8e8;margin-bottom:.5rem;">🧙 Wizard AI is building your adventure...</div>
+  <div class="spinner"></div>
+  <div class="loading-bar-outer"><div class="loading-bar-inner" id="loading-bar"></div></div>
+  <div class="loading-steps">
+    <div class="loading-step" id="ls1">📖 Reading lesson content...</div>
+    <div class="loading-step" id="ls2">🎭 Writing character dialogues...</div>
+    <div class="loading-step" id="ls3">🧩 Building checkpoint quizzes...</div>
+    <div class="loading-step" id="ls4">✨ Rendering your adventure...</div>
+  </div>
+</div>
+
+<!-- TOP BAR -->
+<div class="topbar" id="topbar" style="display:none;">
+  <div style="display:flex;align-items:center;gap:.75rem;">
+    <button class="exit-btn" onclick="confirmExit()">✕ Exit</button>
+    <div class="lesson-title-bar" id="lesson-title-bar">🗺️ Adventure Lesson</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:.75rem;">
+    <div class="xp-pill">⚡ <span id="xp-count">0</span> XP</div>
+    <div class="progress-wrap">
+      <div class="progress-bar-outer"><div class="progress-bar-inner" id="progress-bar"></div></div>
+      <div class="progress-label" id="progress-label">Scene 1 of ?</div>
+    </div>
+  </div>
+</div>
+
+<div class="stage" id="stage" style="display:none;"></div>
+
+<script>
+/* ══ STARS ══ */
+(function(){for(let i=0;i<120;i++){const s=document.createElement('div');s.className='star';const sz=Math.random()*2.2+0.4;s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-duration:${Math.random()*4+2}s;animation-delay:${Math.random()*6}s;opacity:${Math.random()*.4+.1};`;document.body.appendChild(s);}})();
+
+/* ══ STATE ══ */
+let lessonData=null, scenes=[], currentScene=0, totalXP=0;
+let cpState={}, cpDone={};
+const CHARS={finn:{emoji:'⚔️',class:'finn',name:'Finn'},jake:{emoji:'🐶',class:'jake',name:'Jake'},bmo:{emoji:'🎮',class:'bmo',name:'BMO'}};
+
+/* ══ TOAST ══ */
+let _tt;
+function showToast(msg,type='info'){const t=document.getElementById('toast');t.textContent=msg;t.className=`show ${type}`;clearTimeout(_tt);_tt=setTimeout(()=>t.className='',3200);}
+
+/* ══ LOADING ANIMATION ══ */
+function animateLoading(){
+  const steps=['ls1','ls2','ls3','ls4'];
+  const bar=document.getElementById('loading-bar');
+  let i=0;
+  bar.style.width='10%';
+  const iv=setInterval(()=>{
+    if(i<steps.length){
+      if(i>0)document.getElementById(steps[i-1]).className='loading-step done';
+      document.getElementById(steps[i]).className='loading-step active';
+      bar.style.width=(20+(i*20))+'%';
+      i++;
+    }
+  },600);
+  return iv;
+}
+
+/* ══ INIT ══ */
+
+async function fetchWithTimeout(url,secs=12){
+  const ctrl=new AbortController();
+  const t=setTimeout(()=>ctrl.abort(),secs*1000);
+  try{const r=await fetch(url,{redirect:'follow',signal:ctrl.signal});clearTimeout(t);return r;}
+  catch(e){clearTimeout(t);throw e;}
+}
+
+async function init(){
+  const params=new URLSearchParams(window.location.search);
+  const quizId=params.get('id');
+  const isPreview=params.get('preview')==='1';
+  const iv=animateLoading();
+  let data=null;
+
+  // SOURCE 1: localStorage keyed by quizId (fastest — works if teacher used same device)
+  if(quizId){
+    try{
+      const s=localStorage.getItem('adventure_lesson_'+quizId);
+      if(s&&s.length>20){data=JSON.parse(s);console.log('✅ Loaded from localStorage key');}
+    }catch(e){}
+  }
+
+  // SOURCE 2: s_quizzes array in localStorage
+  if(!data){
+    try{
+      const quizzes=JSON.parse(localStorage.getItem('s_quizzes')||'[]');
+      const q=quizzes.find(q=>String(q.id)===String(quizId));
+      if(q){
+        // Try lessonData field directly
+        if(q.lessonData&&q.lessonData.length>20){
+          data=typeof q.lessonData==='string'?JSON.parse(q.lessonData):q.lessonData;
+          console.log('✅ Loaded from s_quizzes.lessonData');
+        }
+        // Try extracting from questions field (embedded adventure lesson)
+        if(!data&&q.questions){
+          try{
+            const qs=typeof q.questions==='string'?JSON.parse(q.questions):q.questions;
+            if(Array.isArray(qs)&&qs[0]?.question==='__ADVENTURE_LESSON__'&&qs[0].lessonData){
+              const ld=qs[0].lessonData;
+              data=typeof ld==='string'?JSON.parse(ld):ld;
+              localStorage.setItem('adventure_lesson_'+quizId, typeof ld==='string'?ld:JSON.stringify(ld));
+              console.log('✅ Loaded from s_quizzes.questions[0].lessonData');
+            }
+          }catch(e){console.warn('questions parse:',e.message);}
+        }
+      }
+    }catch(e){}
+  }
+
+  // SOURCE 3: getLesson — from Supabase
+  if(!data&&quizId){
+    document.getElementById('ls1').textContent='☁️ Loading from cloud...';
+    document.getElementById('ls2').className='loading-step active';
+    try{
+      const lessonRes=await getLesson(quizId);
+      if(lessonRes.ok&&lessonRes.lessonData&&lessonRes.lessonData.length>10){
+        const ld3=lessonRes.lessonData;
+        try{data=typeof ld3==='string'?JSON.parse(ld3):ld3;localStorage.setItem('adventure_lesson_'+quizId,typeof ld3==='string'?ld3:JSON.stringify(ld3));console.log('✅ Loaded via Supabase, size:',ld3.length);}
+        catch(e){console.warn('parse err:',e.message);}
+      }
+    }catch(e){console.warn('getLesson err:',e.message);}
+    if(!data){
+      document.getElementById('ls3').className='loading-step active';
+      try{
+        const q2=await fetchQuizById(quizId);
+        if(q2&&q2.lessonData){const ld4=typeof q2.lessonData==='string'?q2.lessonData:JSON.stringify(q2.lessonData);data=typeof q2.lessonData==='string'?JSON.parse(q2.lessonData):q2.lessonData;localStorage.setItem('adventure_lesson_'+quizId,ld4);}
+      }catch(e){console.warn('fetchQuizById err:',e.message);}
+    }
+  }
+  clearInterval(iv);
+
+  if(!data){
+    document.getElementById('loading-overlay').innerHTML=`
+      <div style="text-align:center;padding:2rem;max-width:480px;">
+        <div style="font-size:3rem;margin-bottom:1rem;">😕</div>
+        <p style="font-family:'Fredoka One',cursive;font-size:1.2rem;color:#c9b8e8;margin-bottom:.75rem;">Adventure lesson not found.</p>
+        <div style="background:rgba(255,215,0,.08);border:2px solid rgba(255,215,0,.3);border-radius:12px;padding:1rem;margin-bottom:1.25rem;font-size:.82rem;color:#ffd700;text-align:left;line-height:1.7;">
+          <strong>What to do:</strong><br>
+          1. Ask your teacher to go to <strong>Deploy Adventure</strong> in the Command Tower<br>
+          2. Re-upload the HTML lesson and click <strong>Deploy Adventure!</strong><br>
+          3. Make sure the Google Sheets API is properly configured<br>
+          4. Then try opening this quest again
+        </div>
+        <button onclick="window.location.href='student.html'" style="background:linear-gradient(135deg,#00aaff,#0055aa);color:white;border:none;padding:.75rem 2rem;border-radius:50px;font-family:'Fredoka One',cursive;font-size:1rem;cursor:pointer;">← Back to Hero Portal</button>
+      </div>`;
+    return;
+  }
+
+  clearInterval(iv);
+  document.getElementById('loading-bar').style.width='90%';
+  document.getElementById('ls4').className='loading-step active';
+  lessonData=data;
+
+  // Build scenes array: content scenes + final complete scene
+  scenes=[...lessonData.scenes,{type:'complete'}];
+  
+  setTimeout(()=>{
+    document.getElementById('loading-bar').style.width='100%';
+    setTimeout(()=>{
+      document.getElementById('loading-overlay').style.display='none';
+      document.getElementById('topbar').style.display='flex';
+      document.getElementById('stage').style.display='block';
+      document.getElementById('lesson-title-bar').textContent='🗺️ '+lessonData.title;
+      renderScene(0);
+    },300);
+  },400);
+}
+
+/* ══ RENDER SCENE ══ */
+function renderScene(idx){
+  currentScene=idx;
+  const stage=document.getElementById('stage');
+  stage.innerHTML='';
+  const scene=scenes[idx];
+  const el=buildSceneEl(scene,idx);
+  stage.appendChild(el);
+  el.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  updateProgress();
+}
+
+function buildSceneEl(scene,idx){
+  const div=document.createElement('div');
+  div.className='scene';
+
+  if(scene.type==='complete'){
+    div.innerHTML=buildComplete();
+    return div;
+  }
+
+  // Group consecutive non-checkpoint scenes together
+  let html='';
+
+  if(scene.type==='chapter'){
+    html+=`<div class="chapter-banner">
+      <span class="chapter-icon">${scene.icon||'📖'}</span>
+      <div class="chapter-num">Chapter ${scene.chapterNum||idx+1}</div>
+      <div class="chapter-title">${scene.title||''}</div>
+      <div class="chapter-sub">${scene.subtitle||''}</div>
+    </div>`;
+  }
+  else if(scene.type==='dialogue'){
+    const char=CHARS[scene.character]||CHARS.finn;
+    const isRight=scene.character==='finn';
+    html+=`<div class="dialogue-block ${isRight?'right':''}">
+      <div class="char-wrap ${char.class}">
+        <div class="char-avatar">${char.emoji}</div>
+        <div class="char-name">${char.name}</div>
+      </div>
+      <div class="speech-bubble ${isRight?'right-tail':'left-tail'}">${scene.text||''}</div>
+    </div>`;
+  }
+  else if(scene.type==='content'){
+    html+=`<div class="content-card">
+      <h3>${scene.title||''}</h3>
+      <p>${scene.body||''}</p>
+      ${scene.formula?`<div class="formula-box">${scene.formula}</div>`:''}
+    </div>`;
+  }
+  else if(scene.type==='two_col'){
+    const colorL=scene.leftColor||'blue', colorR=scene.rightColor||'purple';
+    html+=`<div class="two-col">
+      <div class="col-card ${colorL}">
+        <h4>${scene.leftTitle||''}</h4>
+        <ul>${(scene.leftItems||[]).map(i=>`<li>${i}</li>`).join('')}</ul>
+        ${scene.leftFormula?`<div class="formula-box" style="font-size:.75rem;">${scene.leftFormula}</div>`:''}
+      </div>
+      <div class="col-card ${colorR}">
+        <h4>${scene.rightTitle||''}</h4>
+        <ul>${(scene.rightItems||[]).map(i=>`<li>${i}</li>`).join('')}</ul>
+        ${scene.rightFormula?`<div class="formula-box" style="font-size:.75rem;">${scene.rightFormula}</div>`:''}
+      </div>
+    </div>`;
+  }
+  else if(scene.type==='highlight'){
+    html+=`<div class="highlight-box hb-${scene.style||'cyan'}">
+      <div class="hb-icon">${scene.icon||'💡'}</div>
+      <div class="hb-text">
+        <div class="hb-label">${scene.label||''}</div>
+        ${scene.body||''}
+      </div>
+    </div>`;
+  }
+  else if(scene.type==='checkpoint'){
+    html+=buildCheckpoint(scene,idx);
+    div.innerHTML=html;
+    attachCheckpointLogic(div,scene,idx);
+    return div;
+  }
+
+  // Nav buttons
+  html+=`<div class="nav-row">
+    ${idx>0?`<button class="nav-btn secondary" onclick="renderScene(${idx-1})">← Back</button>`:''}
+    <button class="nav-btn primary" onclick="renderScene(${idx+1})">${idx>=scenes.length-2?'Complete Adventure! 🏆':'Continue →'}</button>
+  </div>`;
+
+  div.innerHTML=html;
+  return div;
+}
+
+function buildCheckpoint(scene,idx){
+  const cpId='cp_'+idx;
+  let html=`<div class="checkpoint-header">
+    <div class="checkpoint-badge">🚩 Checkpoint ${scene.cpNum||''}</div>
+    <div class="checkpoint-title">${scene.title||'Knowledge Check!'}</div>
+    <div class="checkpoint-sub">Answer all questions to earn XP and continue</div>
+  </div>`;
+
+  (scene.questions||[]).forEach((q,qi)=>{
+    const qId=`${cpId}_q${qi}`;
+    html+=`<div class="cp-question" id="${qId}">
+      <div class="cp-q-text">${qi+1}. ${q.q}</div>
+      <div class="cp-options">
+        ${q.options.map((o,oi)=>`<button class="cp-opt" data-cp="${cpId}" data-q="${qi}" data-sel="${oi}" data-correct="${q.correct}" data-right="${encodeURIComponent(q.feedback_right)}" data-wrong="${encodeURIComponent(q.feedback_wrong)}">${String.fromCharCode(65+oi)}) ${o}</button>`).join('')}
+      </div>
+      <div class="cp-feedback" id="${qId}_fb"></div>
+    </div>`;
+  });
+
+  html+=`<div class="cp-result" id="${cpId}_result">
+    <div id="${cpId}_icon" style="font-size:2.5rem;margin-bottom:.4rem;"></div>
+    <div class="cp-result-score" id="${cpId}_score"></div>
+    <div class="cp-result-msg" id="${cpId}_msg"></div>
+  </div>
+  <div class="nav-row">
+    ${idx>0?`<button class="nav-btn secondary" onclick="renderScene(${idx-1})">← Back</button>`:''}
+    <button class="nav-btn primary" id="${cpId}_next" onclick="renderScene(${idx+1})" disabled>${idx>=scenes.length-2?'Complete Adventure! 🏆':'Continue →'}</button>
+  </div>`;
+  return html;
+}
+
+function attachCheckpointLogic(div,scene,idx){
+  const cpId='cp_'+idx;
+  const total=scene.questions.length;
+  let answered=0,correct=0;
+
+  div.querySelectorAll('.cp-opt').forEach(btn=>{
+    btn.addEventListener('click',function(){
+      const qIdx=parseInt(this.dataset.q);
+      const qId=`${cpId}_q${qIdx}`;
+      if(div.querySelector(`#${qId} .cp-opt.correct`))return;// already answered
+      const sel=parseInt(this.dataset.sel);
+      const corr=parseInt(this.dataset.correct);
+      const isCorrect=sel===corr;
+      const fbEl=div.querySelector(`#${qId}_fb`);
+      div.querySelectorAll(`#${qId} .cp-opt`).forEach(o=>o.disabled=true);
+      this.classList.add(isCorrect?'correct':'wrong');
+      if(!isCorrect)div.querySelectorAll(`#${qId} .cp-opt`)[corr].classList.add('correct');
+      fbEl.textContent=isCorrect?decodeURIComponent(this.dataset.right):decodeURIComponent(this.dataset.wrong);
+      fbEl.className='cp-feedback show '+(isCorrect?'correct-fb':'wrong-fb');
+      if(isCorrect){correct++;totalXP+=10;document.getElementById('xp-count').textContent=totalXP;const xEl=document.createElement('div');xEl.className='xp-flash';xEl.textContent='+10 XP!';document.body.appendChild(xEl);setTimeout(()=>xEl.remove(),1300);}
+      answered++;
+      if(answered===total){
+        const pct=Math.round(correct/total*100);
+        const result=div.querySelector(`#${cpId}_result`);
+        result.classList.add('show');
+        div.querySelector(`#${cpId}_icon`).textContent=pct>=75?'🌟':pct>=50?'✅':'💪';
+        const scoreEl=div.querySelector(`#${cpId}_score`);
+        scoreEl.textContent=`${correct}/${total}`;
+        scoreEl.style.color=pct>=75?'#00d4aa':pct>=50?'#ffd700':'#ff6666';
+        div.querySelector(`#${cpId}_msg`).textContent=pct>=75?'Excellent! Keep going!':`Got ${correct} right. Review the explanations above!`;
+        div.querySelector(`#${cpId}_next`).disabled=false;
+        showToast(`Checkpoint done! ${correct}/${total} correct 🎯`);
+      }
+    });
+  });
+}
+
+function buildComplete(){
+  const allCorrect=Object.values(cpState).reduce((a,b)=>a+b,0);
+  const totalQ=scenes.filter(s=>s.type==='checkpoint').reduce((a,s)=>a+(s.questions?.length||0),0);
+  const pct=totalQ?Math.round(totalXP/(totalQ*10)*100):100;
+  const grades=[[90,'🌟 OUTSTANDING — Excellence is a Habit!'],[75,'🚀 VERY GOOD — Keep aiming higher!'],[50,'✅ GOOD — You\'re on the right track!'],[0,'💪 KEEP TRAINING — Review and try again!']];
+  const grade=grades.find(([t])=>pct>=t)[1];
+  return `<div class="complete-wrap">
+    <span class="complete-star">🌟</span>
+    <div class="complete-title">Quest Complete!</div>
+    <div class="complete-sub">You've conquered: ${lessonData.title}</div>
+    <div style="margin:1.25rem 0;">
+      <div class="xp-earned">${totalXP} XP</div>
+      <div class="xp-label">Total XP Earned</div>
+    </div>
+    <div class="grade-label">${grade}</div>
+    <div class="key-takeaways">
+      <h3>📚 What You Learned</h3>
+      <ul>${(lessonData.scenes||[]).filter(s=>s.type==='content'||s.type==='highlight').slice(0,6).map(s=>`<li>${s.title?s.title.replace(/[🔬📏✏️💡🧠📊🤝]/g,'').trim()+': ':''} ${(s.body||'').substring(0,100)}${(s.body||'').length>100?'...':''}</li>`).join('')}</ul>
+    </div>
+    <div style="background:rgba(0,170,255,.08);border:2px solid rgba(0,170,255,.2);border-radius:14px;padding:1rem;margin:1rem 0;text-align:center;">
+      <div style="font-family:'Fredoka One',cursive;font-size:.82rem;color:#00aaff;margin-bottom:.35rem;">⚡ EXCELLENCE IS A HABIT</div>
+      <div style="font-size:.85rem;font-weight:700;color:#e8deff;">Keep pushing your limits in the Land of Wit!</div>
+    </div>
+    <div class="nav-row">
+      <button class="nav-btn primary" style="width:100%;font-size:1.05rem;" onclick="finishLesson()">✅ Submit & Return to Hero Portal</button>
+    </div>
+  </div>`;
+}
+
+function updateProgress(){
+  const pct=Math.round((currentScene+1)/scenes.length*100);
+  document.getElementById('progress-bar').style.width=pct+'%';
+  document.getElementById('progress-label').textContent=`Scene ${currentScene+1} of ${scenes.length}`;
+  document.getElementById('xp-count').textContent=totalXP;
+}
+
+function confirmExit(){if(confirm('Exit this adventure? XP earned so far will be saved.'))finishLesson();}
+function finishLesson(){window.location.href='student.html';}
+
+init();
+</script>
+</body>
+</html>

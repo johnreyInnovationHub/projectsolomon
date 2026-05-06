@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Project Solomon — Hero Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    html{scroll-behavior:smooth;}
+    body{font-family:'Nunito','Segoe UI',sans-serif;background:#0d0618;color:#fffde7;min-height:100vh;overflow-x:hidden;}
+    #ooo-bg{position:fixed;inset:0;background:linear-gradient(180deg,#0d0618 0%,#1a0a2e 40%,#0f1a3d 70%,#0a0020 100%);z-index:0;overflow:hidden;pointer-events:none;}
+    .ooo-star{position:absolute;border-radius:50%;background:white;animation:twinkle linear infinite;}
+    .ooo-blob{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;opacity:0.12;}
+    @keyframes twinkle{0%,100%{opacity:.2;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .page{position:relative;z-index:1;min-height:100vh;}
+    .hidden{display:none!important;}
+    .page-section{display:none;}
+    .page-section.active{display:block;}
+    /* NAV */
+    .nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1.1rem 2.5rem;background:rgba(13,6,24,0.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:2px solid rgba(0,170,255,0.25);box-shadow:0 4px 20px rgba(0,0,0,.5);}
+    .nav-logo{font-family:'Fredoka One',cursive;font-size:1.2rem;letter-spacing:.05em;background:linear-gradient(135deg,#00aaff,#ffd700,#ff69b4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .nav-logo span{display:block;font-family:'Nunito',sans-serif;font-size:.58rem;letter-spacing:.25em;color:#c9b8e8;-webkit-text-fill-color:#c9b8e8;margin-top:1px;font-weight:700;text-transform:uppercase;}
+    .nav-links{display:flex;gap:.5rem;align-items:center;}
+    .nav-btn{padding:.45rem 1.1rem;border-radius:50px;border:2px solid rgba(0,170,255,.3);background:transparent;color:#c9b8e8;font-family:'Nunito',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .3s;text-decoration:none;}
+    .nav-btn:hover{background:rgba(0,170,255,.15);color:#00aaff;border-color:#00aaff;}
+    .nav-btn.logout{color:#ff69b4;border-color:rgba(255,105,180,.4);}
+    .nav-btn.logout:hover{background:rgba(255,105,180,.15);}
+    /* GLASS */
+    .glass-card{background:rgba(74,14,143,.22);border:2px solid rgba(0,170,255,.22);border-radius:20px;backdrop-filter:blur(16px);padding:2rem;box-shadow:0 8px 32px rgba(0,0,0,.3);}
+    /* FORMS */
+    .form-group{margin-bottom:1.25rem;}
+    .form-label{display:block;font-size:.78rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#c9b8e8;margin-bottom:.5rem;}
+    .form-control{width:100%;padding:.8rem 1.1rem;background:rgba(0,0,0,.5);border:2px solid rgba(0,170,255,.2);border-radius:12px;color:#fffde7;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:600;outline:none;transition:border-color .3s;}
+    .form-control:focus{border-color:#00aaff;box-shadow:0 0 0 3px rgba(0,170,255,.15);}
+    .form-control::placeholder{color:#7a6090;}
+    select.form-control option{background:#1a0a2e;color:#fffde7;}
+    /* BUTTONS */
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.75rem 1.75rem;border-radius:50px;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;transition:all .25s;text-decoration:none;border:none;letter-spacing:.04em;}
+    .btn-block{width:100%;}
+    .btn-sm{padding:.4rem 1rem;font-size:.82rem;}
+    .btn-cyan{background:linear-gradient(135deg,#00aaff,#0055aa);color:white;box-shadow:0 4px 20px rgba(0,170,255,.4);}
+    .btn-cyan:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,170,255,.6);}
+    .btn-gold{background:linear-gradient(135deg,#ffd700,#ff8c00);color:#1a0a2e;box-shadow:0 4px 20px rgba(255,215,0,.4);font-weight:900;}
+    .btn-gold:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(255,215,0,.6);}
+    .btn-magenta{background:linear-gradient(135deg,#ff69b4,#cc0055);color:white;box-shadow:0 4px 20px rgba(255,105,180,.4);}
+    .btn-magenta:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(255,105,180,.6);}
+    .btn-ghost{background:transparent;color:#c9b8e8;border:2px solid rgba(0,170,255,.25);}
+    .btn-ghost:hover{background:rgba(0,170,255,.1);color:#fffde7;}
+    .btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important;}
+    /* BADGES */
+    .badge{display:inline-block;padding:.2rem .6rem;border-radius:50px;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;}
+    .badge-cyan{background:rgba(0,170,255,.2);color:#00aaff;border:1px solid rgba(0,170,255,.4);}
+    .badge-magenta{background:rgba(255,105,180,.2);color:#ff69b4;border:1px solid rgba(255,105,180,.4);}
+    .badge-gold{background:rgba(255,215,0,.2);color:#ffd700;border:1px solid rgba(255,215,0,.4);}
+    .badge-green{background:rgba(0,212,170,.2);color:#00d4aa;border:1px solid rgba(0,212,170,.4);}
+    .badge-gray{background:rgba(120,100,150,.2);color:#c9b8e8;border:1px solid rgba(120,100,150,.3);}
+    /* REGISTER WRAP */
+    .register-wrap{max-width:520px;margin:3rem auto;padding:0 1.5rem;}
+    .register-hero{text-align:center;margin-bottom:2rem;}
+    .r-icon{font-size:4rem;display:block;margin-bottom:1rem;animation:float 3s ease-in-out infinite;}
+    .section-title{font-family:'Fredoka One',cursive;font-size:1.9rem;letter-spacing:.03em;background:linear-gradient(135deg,#fffde7,#00aaff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.3rem;}
+    .section-sub{color:#c9b8e8;font-size:.9rem;font-weight:700;}
+    /* AVATAR GRID */
+    .avatar-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:.75rem;max-height:300px;overflow-y:auto;padding:.25rem;}
+    .avatar-option{background:rgba(74,14,143,.25);border:2px solid rgba(0,170,255,.2);border-radius:12px;padding:.6rem .4rem;text-align:center;cursor:pointer;transition:all .25s;}
+    .avatar-option:hover{border-color:#00aaff;transform:scale(1.08);}
+    .avatar-option.selected{border-color:#ffd700;background:rgba(255,215,0,.12);box-shadow:0 0 18px rgba(255,215,0,.35);}
+    .avatar-label{font-size:.6rem;font-weight:800;color:#c9b8e8;margin-top:.25rem;display:block;}
+    .active-u{color:#00aaff!important;border-color:#00aaff!important;background:rgba(0,170,255,.1)!important;}
+    /* SPINNER */
+    .spinner{width:40px;height:40px;border:3px solid rgba(0,170,255,.2);border-top-color:#00aaff;border-radius:50%;animation:spin .8s linear infinite;margin:2rem auto;}
+    /* TOAST */
+    #global-toast{position:fixed;bottom:2rem;right:2rem;background:rgba(26,10,46,.98);border:2px solid #00aaff;border-radius:14px;padding:1rem 1.5rem;color:#fffde7;font-size:.9rem;font-weight:700;z-index:9999;transform:translateX(120%);transition:transform .4s cubic-bezier(.34,1.56,.64,1);max-width:320px;box-shadow:0 8px 30px rgba(0,0,0,.5);}
+    #global-toast.show{transform:translateX(0);}
+    #global-toast.success{border-color:#00d4aa;}
+    #global-toast.error{border-color:#ff4444;}
+    /* MODAL */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);z-index:1000;display:none;align-items:center;justify-content:center;padding:1rem;}
+    .modal-overlay.active{display:flex;}
+    .modal{background:linear-gradient(145deg,rgba(26,10,46,.99),rgba(13,6,24,.99));border:2px solid rgba(0,170,255,.3);border-radius:24px;padding:2.5rem;max-width:460px;width:90%;position:relative;box-shadow:0 25px 80px rgba(0,0,0,.7);color:#fffde7;text-align:center;}
+    .modal-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:#c9b8e8;font-size:1.5rem;cursor:pointer;}
+    .modal-close:hover{color:#ff69b4;}
+    /* DASHBOARD */
+    .dashboard-layout{display:flex;min-height:calc(100vh - 65px);}
+    .sidebar{width:220px;flex-shrink:0;background:rgba(13,6,24,.88);border-right:2px solid rgba(0,170,255,.2);padding:1.5rem 1rem;position:sticky;top:65px;height:calc(100vh - 65px);overflow-y:auto;}
+    .sidebar-section-label{font-family:'Fredoka One',cursive;font-size:.65rem;letter-spacing:.18em;text-transform:uppercase;color:#7a6090;padding:.75rem 1rem .4rem;}
+    .sidebar-item{display:flex;align-items:center;gap:.75rem;padding:.7rem 1rem;border-radius:12px;color:#c9b8e8;font-size:.88rem;font-weight:700;transition:all .3s;cursor:pointer;border:2px solid transparent;background:transparent;width:100%;text-align:left;margin-bottom:.3rem;font-family:'Nunito',sans-serif;}
+    .sidebar-item:hover{background:rgba(74,14,143,.25);color:#fffde7;}
+    .sidebar-item.active{background:rgba(0,170,255,.12);color:#00aaff;border-color:rgba(0,170,255,.25);}
+    .sidebar-icon{font-size:1.2rem;width:24px;text-align:center;}
+    .main-content{flex:1;padding:2.5rem;overflow-x:hidden;}
+    /* PROFILE BANNER */
+    .profile-banner{background:linear-gradient(135deg,rgba(74,14,143,.5),rgba(26,10,46,.7));border:2px solid rgba(0,170,255,.22);border-radius:20px;padding:1.5rem 2rem;display:flex;align-items:center;gap:1.5rem;margin-bottom:2rem;}
+    .profile-avatar-lg{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#4a0e8f,#0055aa);border:3px solid #ffd700;display:flex;align-items:center;justify-content:center;font-size:2.6rem;flex-shrink:0;box-shadow:0 0 25px rgba(255,215,0,.4);}
+    .xp-bar-track{width:100%;height:8px;background:rgba(0,0,0,.4);border-radius:10px;overflow:hidden;}
+    .xp-bar-fill{height:100%;background:linear-gradient(90deg,#00aaff,#00d4aa);border-radius:10px;transition:width 1s ease;}
+    /* ZONE CARDS */
+    .quest-zones{display:grid;grid-template-columns:1fr;gap:1.25rem;margin-top:1.5rem;}
+    .quest-zone-card{background:rgba(74,14,143,.22);border:2px solid rgba(0,170,255,.22);border-radius:20px;padding:1.75rem;cursor:pointer;transition:all .3s cubic-bezier(.34,1.2,.64,1);display:flex;align-items:center;gap:1.5rem;text-decoration:none;color:#fffde7;}
+    .quest-zone-card:hover{transform:translateX(6px);}
+    .quest-zone-card.adventure:hover{border-color:#00aaff;box-shadow:0 8px 30px rgba(0,170,255,.15);}
+    .quest-zone-card.training:hover{border-color:#ffd700;box-shadow:0 8px 30px rgba(255,215,0,.15);}
+    .quest-zone-card.arena:hover{border-color:#ff69b4;box-shadow:0 8px 30px rgba(255,105,180,.15);}
+    .zone-icon-wrap{width:68px;height:68px;border-radius:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:2.4rem;}
+    .adventure .zone-icon-wrap{background:rgba(0,170,255,.15);border:2px solid rgba(0,170,255,.3);}
+    .training .zone-icon-wrap{background:rgba(255,215,0,.15);border:2px solid rgba(255,215,0,.3);}
+    .arena .zone-icon-wrap{background:rgba(255,105,180,.15);border:2px solid rgba(255,105,180,.3);}
+    .zone-info{flex:1;}
+    .zone-info h3{font-family:'Fredoka One',cursive;font-size:1.2rem;margin-bottom:.2rem;}
+    .zone-info p{color:#c9b8e8;font-size:.82rem;font-weight:700;}
+    .zone-arrow{font-size:1.3rem;color:#7a6090;transition:transform .3s;}
+    .quest-zone-card:hover .zone-arrow{transform:translateX(4px);color:#fffde7;}
+    /* QUEST CARDS */
+    .quest-card{background:rgba(74,14,143,.22);border:2px solid rgba(0,170,255,.2);border-radius:18px;padding:1.5rem;margin-bottom:1rem;transition:all .3s;cursor:pointer;}
+    .quest-card:hover{border-color:#00aaff;transform:translateX(4px);box-shadow:4px 0 24px rgba(0,170,255,.1);}
+    .quest-card.completed{border-color:rgba(0,212,170,.3);}
+    .quest-header{display:flex;align-items:center;gap:1rem;}
+    .quest-icon{font-size:2.2rem;}
+    .quest-info{flex:1;}
+    .quest-info h3{font-family:'Fredoka One',cursive;font-size:1rem;letter-spacing:.04em;color:#fffde7;}
+    .quest-info p{color:#c9b8e8;font-size:.8rem;margin-top:.2rem;font-weight:600;}
+    .quest-meta{display:flex;gap:.5rem;margin-top:.85rem;flex-wrap:wrap;}
+    /* STATS */
+    .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;}
+    .stat-card{background:rgba(74,14,143,.22);border:2px solid rgba(0,170,255,.2);border-radius:16px;padding:1.25rem;text-align:center;}
+    .stat-value{font-family:'Fredoka One',cursive;font-size:2rem;color:#00aaff;}
+    .stat-label{font-size:.72rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#7a6090;margin-top:.2rem;}
+    /* JOURNAL / LOOT */
+    .journal-entry{background:rgba(0,0,0,.25);border:2px solid rgba(0,170,255,.15);border-radius:12px;padding:1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:1rem;}
+    .score-circle{width:54px;height:54px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',cursive;font-size:.85rem;}
+    .loot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1.5rem;}
+    .loot-item{background:rgba(74,14,143,.22);border:2px solid rgba(0,170,255,.2);border-radius:16px;padding:1.25rem;text-align:center;cursor:pointer;transition:all .3s;}
+    .loot-item:hover{border-color:#ffd700;box-shadow:0 0 20px rgba(255,215,0,.3);transform:scale(1.04);}
+    .loot-icon{font-size:2.5rem;margin-bottom:.5rem;display:block;}
+    .empty-state{text-align:center;padding:3rem;color:#7a6090;}
+    .empty-state span{font-size:3rem;display:block;margin-bottom:1rem;}
+    .empty-state p{font-weight:700;font-size:.9rem;}
+    @media(max-width:768px){
+      .sidebar{display:none;}
+      .dashboard-layout{flex-direction:column;}
+      .main-content{padding:1.5rem;}
+      .grid-4{grid-template-columns:repeat(2,1fr);}
+      .avatar-grid{grid-template-columns:repeat(4,1fr);}
+      .nav{padding:1rem 1.25rem;}
+      .profile-banner{flex-direction:column;text-align:center;}
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div id="ooo-bg"></div>
+<div id="global-toast"></div>
+
+<!-- REGISTRATION -->
+<div id="view-register" class="page">
+  <nav class="nav">
+    <div class="nav-logo">PROJECT SOLOMON<span>HERO REGISTRATION</span></div>
+    <a href="index.html" class="nav-btn">← Back to Land of Wit</a>
+  </nav>
+  <div class="register-wrap">
+    <div class="register-hero">
+      <span class="r-icon">⚔️</span>
+      <h1 class="section-title">Join the Adventure!</h1>
+      <p class="section-sub">Register to begin your quest in the Land of Wit</p>
+    </div>
+    <div class="glass-card">
+      <div id="reg-step-1">
+        <div class="form-group"><label class="form-label">Full Name</label><input type="text" id="reg-name" class="form-control" placeholder="Your hero name"/></div>
+        <div class="form-group"><label class="form-label">Email Address</label><input type="email" id="reg-email" class="form-control" placeholder="hero@school.com"/></div>
+        <div class="form-group">
+          <label class="form-label">Grade &amp; Section</label>
+          <select id="reg-section" class="form-control">
+            <option value="">Select your guild</option>
+            <option value="11A">Grade 11 — Section A</option>
+            <option value="11B">Grade 11 — Section B</option>
+            <option value="11C">Grade 11 — Section C</option>
+            <option value="11D">Grade 11 — Section D</option>
+            <option value="DEMO">DEMO Class</option>
+          </select>
+        </div>
+        <button class="btn btn-cyan btn-block" onclick="goToAvatarStep()">Choose Your Avatar →</button>
+      </div>
+      <div id="reg-step-2" class="hidden">
+        <h3 style="font-family:'Fredoka One',cursive;font-size:1.1rem;margin-bottom:.25rem;">Choose Your Champion</h3>
+        <p style="font-size:.8rem;color:#c9b8e8;margin-bottom:1.25rem;font-weight:700;">Pick your identity for the Land of Wit</p>
+        <div id="universe-filter" style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem;">
+          <button class="btn btn-ghost btn-sm active-u" onclick="filterUniverse('all',this)">All</button>
+          <button class="btn btn-ghost btn-sm" onclick="filterUniverse('Ooo Heroes',this)">Ooo Heroes</button>
+          <button class="btn btn-ghost btn-sm" onclick="filterUniverse('Pokéverse',this)">Pokéverse</button>
+          <button class="btn btn-ghost btn-sm" onclick="filterUniverse('Upside Down',this)">Upside Down</button>
+          <button class="btn btn-ghost btn-sm" onclick="filterUniverse('Wizardlands',this)">Wizardlands</button>
+          <button class="btn btn-ghost btn-sm" onclick="filterUniverse('Shinobi Realm',this)">Shinobi</button>
+          <button class="btn btn-ghost btn-sm" onclick="filterUniverse('Strix Division',this)">Strix</button>
+        </div>
+        <div class="avatar-grid" id="avatar-grid"></div>
+        <div style="display:flex;gap:.75rem;margin-top:1.5rem;">
+          <button class="btn btn-ghost" onclick="backToStep1()">← Back</button>
+          <button class="btn btn-gold" style="flex:1;" onclick="completeRegistration()">⚔️ Begin Quest!</button>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:1.5rem;text-align:center;"><p style="font-size:.85rem;color:#c9b8e8;font-weight:700;">Already a hero? <a href="#" onclick="showLogin()" style="color:#00aaff;">Sign In</a></p></div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="view-login" class="page hidden">
+  <nav class="nav">
+    <div class="nav-logo">PROJECT SOLOMON<span>HERO PORTAL</span></div>
+    <a href="index.html" class="nav-btn">← Back to Land of Wit</a>
+  </nav>
+  <div class="register-wrap">
+    <div class="register-hero">
+      <span class="r-icon">🏰</span>
+      <h1 class="section-title">Welcome Back, Hero!</h1>
+      <p class="section-sub">Enter your email to re-enter the Land of Wit</p>
+    </div>
+    <div class="glass-card">
+      <div class="form-group"><label class="form-label">Email Address</label><input type="email" id="login-email" class="form-control" placeholder="hero@school.com" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <button class="btn btn-cyan btn-block" onclick="doLogin()">Enter the Land of Wit ⚔️</button>
+      <p style="text-align:center;margin-top:1rem;font-size:.82rem;color:#c9b8e8;font-weight:700;">New hero? <a href="#" onclick="showRegister()" style="color:#ff69b4;">Register here</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- PENDING -->
+<div id="view-pending" class="page hidden">
+  <nav class="nav">
+    <div class="nav-logo">PROJECT SOLOMON<span>HERO PORTAL</span></div>
+    <a href="index.html" class="nav-btn logout" onclick="doLogout()">⏻ Logout</a>
+  </nav>
+  <div style="max-width:500px;margin:5rem auto;padding:0 1.5rem;text-align:center;">
+    <div class="glass-card">
+      <div style="font-size:4rem;margin-bottom:1rem;">⏳</div>
+      <h2 class="section-title" style="font-size:1.4rem;">Awaiting the Wizard's Blessing!</h2>
+      <p style="color:#c9b8e8;margin-top:.75rem;line-height:1.7;font-weight:700;">Your quest application has been received! Your teacher must approve your account before you can enter the Land of Wit.</p>
+      <div style="margin-top:1.5rem;padding:1rem;background:rgba(0,170,255,.05);border:2px solid rgba(0,170,255,.15);border-radius:12px;">
+        <p style="font-size:.82rem;color:#00aaff;font-weight:700;">💡 Check back soon or ask your teacher to approve your account.</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="checkApproval()" style="margin-top:1.5rem;">🔄 Check Status</button>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="view-dashboard" class="page hidden">
+  <nav class="nav">
+    <div class="nav-logo">PROJECT SOLOMON<span>HERO PORTAL</span></div>
+    <div class="nav-links">
+      <span id="nav-loot-count" style="font-family:'Fredoka One',cursive;font-size:.9rem;color:#ffd700;margin-right:.5rem;"></span>
+      <a href="index.html" class="nav-btn logout" onclick="doLogout()">⏻ Logout</a>
+    </div>
+  </nav>
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <div class="sidebar-section-label">Hero Hub</div>
+      <button class="sidebar-item active" onclick="showStudentTab('zones')"><span class="sidebar-icon">🗺️</span> Zone Select</button>
+      <button class="sidebar-item" onclick="showStudentTab('quests')"><span class="sidebar-icon">📋</span> All Quests</button>
+      <button class="sidebar-item" onclick="showStudentTab('journal')"><span class="sidebar-icon">📖</span> Journey Journal</button>
+      <button class="sidebar-item" onclick="showStudentTab('loot')"><span class="sidebar-icon">🎁</span> Loot Bag</button>
+      <button class="sidebar-item" onclick="showStudentTab('profile')"><span class="sidebar-icon">🛡️</span> My Profile</button>
+    </aside>
+    <main class="main-content">
+      <div id="profile-banner" class="profile-banner"></div>
+      <!-- ZONES -->
+      <div id="stab-zones" class="page-section active">
+        <h1 class="section-title" style="margin-bottom:.3rem;">🗺️ Land of Wit — Choose Your Zone!</h1>
+        <p class="section-sub">Pick your adventure, hero.</p>
+        <div class="quest-zones">
+          <div class="quest-zone-card adventure" onclick="showStudentTab('adventure')">
+            <div class="zone-icon-wrap">🗺️</div>
+            <div class="zone-info"><h3 style="color:#00aaff;">Adventure</h3><p>Explore the Land of Wit through epic interactive lessons. Unlock knowledge, level up!</p></div>
+            <div class="zone-arrow">→</div>
+          </div>
+          <div class="quest-zone-card training" onclick="showStudentTab('training')">
+            <div class="zone-icon-wrap">🐦</div>
+            <div class="zone-info"><h3 style="color:#ffd700;">Training Camp</h3><p>Flap your way through practice questions. Dodge obstacles, collect power-ups!</p></div>
+            <div class="zone-arrow">→</div>
+          </div>
+          <div class="quest-zone-card arena" onclick="showStudentTab('arena')">
+            <div class="zone-icon-wrap">🏟️</div>
+            <div class="zone-info"><h3 style="color:#ff69b4;">Arena</h3><p>Step into the Summative Showdown! Answer fast, beat the clock, claim glory!</p></div>
+            <div class="zone-arrow">→</div>
+          </div>
+        </div>
+      </div>
+      <!-- ADVENTURE -->
+      <div id="stab-adventure" class="page-section">
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.5rem;">
+          <button class="btn btn-ghost btn-sm" onclick="showStudentTab('zones')">← Back</button>
+          <div><h1 class="section-title" style="margin-bottom:0;">🗺️ Adventure Zone</h1><p class="section-sub">Interactive lessons — your epic journey!</p></div>
+        </div>
+        <div id="adventure-list" style="margin-top:1.5rem;"></div>
+      </div>
+      <!-- TRAINING -->
+      <div id="stab-training" class="page-section">
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.5rem;">
+          <button class="btn btn-ghost btn-sm" onclick="showStudentTab('zones')">← Back</button>
+          <div><h1 class="section-title" style="margin-bottom:0;">🐦 Training Camp</h1><p class="section-sub">Practice quizzes — flappy bird style!</p></div>
+        </div>
+        <div id="training-list" style="margin-top:1.5rem;"></div>
+      </div>
+      <!-- ARENA -->
+      <div id="stab-arena" class="page-section">
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.5rem;">
+          <button class="btn btn-ghost btn-sm" onclick="showStudentTab('zones')">← Back</button>
+          <div><h1 class="section-title" style="margin-bottom:0;">🏟️ Arena</h1><p class="section-sub">Summative assessments — the ultimate showdown!</p></div>
+        </div>
+        <div id="arena-list" style="margin-top:1.5rem;"></div>
+      </div>
+      <!-- ALL QUESTS -->
+      <div id="stab-quests" class="page-section">
+        <h1 class="section-title">📋 All Quests</h1><p class="section-sub">Your full quest board</p>
+        <div id="quest-list" style="margin-top:1.5rem;"></div>
+      </div>
+      <!-- JOURNAL -->
+      <div id="stab-journal" class="page-section">
+        <h1 class="section-title">📖 Journey Journal</h1><p class="section-sub">Your mission history and achievements</p>
+        <div class="grid-4" style="margin:1.5rem 0;" id="journal-stats"></div>
+        <div id="journal-list"></div>
+      </div>
+      <!-- LOOT -->
+      <div id="stab-loot" class="page-section">
+        <h1 class="section-title">🎁 Loot Bag</h1><p class="section-sub">Earn loot by achieving perfect scores!</p>
+        <div id="loot-content"></div>
+      </div>
+      <!-- PROFILE -->
+      <div id="stab-profile" class="page-section">
+        <h1 class="section-title">🛡️ My Profile</h1><p class="section-sub">Your hero identity in the Land of Wit</p>
+        <div id="profile-content"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- LOOT MODAL -->
+<div class="modal-overlay" id="loot-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('loot-modal')">✕</button>
+    <h2 style="font-family:'Fredoka One',cursive;font-size:1.2rem;margin-bottom:.25rem;">Opening Loot Bag... 🎁</h2>
+    <div id="loot-reveal" style="margin:2rem 0;"><div id="loot-bag-anim" style="font-size:5rem;">🎁</div></div>
+    <div id="loot-result" class="hidden">
+      <div id="loot-prize-icon" style="font-size:4rem;margin-bottom:.75rem;"></div>
+      <h3 id="loot-prize-name" style="font-family:'Fredoka One',cursive;font-size:1.3rem;"></h3>
+      <p id="loot-prize-rarity" class="badge" style="margin:.5rem auto;display:inline-block;font-size:.85rem;"></p>
+      <p style="color:#c9b8e8;font-size:.85rem;margin-top:.75rem;font-weight:700;">Collect this reward from your teacher! 🏫</p>
+    </div>
+    <button id="open-loot-btn" class="btn btn-magenta" onclick="openLootBag()" style="margin-top:1rem;width:100%;">✨ Open!</button>
+  </div>
+</div>
+
+  <!-- Supabase SDK + shared app.js -->
+  <script src="js/app.js"></script>
+<script>
+(function(){
+  const bg=document.getElementById('ooo-bg');
+  for(let i=0;i<180;i++){const s=document.createElement('div');s.className='ooo-star';const sz=Math.random()*2.5+0.4;s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-duration:${Math.random()*4+2}s;animation-delay:${Math.random()*6}s;opacity:${Math.random()*.5+.1};`;bg.appendChild(s);}
+  [{c:'rgba(74,14,143,1)',x:15,y:20},{c:'rgba(0,170,255,1)',x:75,y:10},{c:'rgba(255,105,180,1)',x:80,y:70},{c:'rgba(0,212,170,1)',x:10,y:75}].forEach(({c,x,y})=>{const b=document.createElement('div');b.className='ooo-blob';const sz=Math.random()*300+220;b.style.cssText=`width:${sz}px;height:${sz}px;background:${c};left:${x}%;top:${y}%;`;document.body.appendChild(b);});
+})();
+
+let _tt;
+function showToast(msg,type='info'){const t=document.getElementById('global-toast');t.textContent=msg;t.className=`show ${type}`;clearTimeout(_tt);_tt=setTimeout(()=>{t.className='';},3500);}
+function showLoading(el,msg='Loading...'){if(typeof el==='string')el=document.getElementById(el);if(el)el.innerHTML=`<div style="text-align:center;padding:2rem;color:#c9b8e8;"><div class="spinner"></div><p style="margin-top:1rem;font-size:.85rem;font-weight:700;">${msg}</p></div>`;}
+function closeModal(id){document.getElementById(id).classList.remove('active');}
+
+let currentStudent=null,selectedAvatar=null,regData={};
+
+/* ── AVATARS (defined here so they always work even if app.js loads slowly) ── */
+const _AVATARS_LOCAL=[
+  {id:'finn',emoji:'⚔️',label:'Finn',universe:'Ooo Heroes'},
+  {id:'jake',emoji:'🐶',label:'Jake',universe:'Ooo Heroes'},
+  {id:'bmo',emoji:'🎮',label:'BMO',universe:'Ooo Heroes'},
+  {id:'pb',emoji:'🍬',label:'Princess B',universe:'Ooo Heroes'},
+  {id:'marceline',emoji:'🎸',label:'Marceline',universe:'Ooo Heroes'},
+  {id:'iceking',emoji:'❄️',label:'Ice King',universe:'Ooo Heroes'},
+  {id:'flame',emoji:'🔥',label:'Flame P.',universe:'Ooo Heroes'},
+  {id:'tree',emoji:'🌳',label:'Tree Trunks',universe:'Ooo Heroes'},
+  {id:'gunter',emoji:'🐧',label:'Gunter',universe:'Ooo Heroes'},
+  {id:'pika',emoji:'⚡',label:'Zappix',universe:'Pokéverse'},
+  {id:'bulb',emoji:'🌿',label:'Leaflet',universe:'Pokéverse'},
+  {id:'char',emoji:'🔥',label:'Pyron',universe:'Pokéverse'},
+  {id:'squi',emoji:'💧',label:'Aquor',universe:'Pokéverse'},
+  {id:'mew',emoji:'🌟',label:'Mystix',universe:'Pokéverse'},
+  {id:'el',emoji:'🔮',label:'Psionica',universe:'Upside Down'},
+  {id:'will',emoji:'🎮',label:'Gamewarden',universe:'Upside Down'},
+  {id:'demo',emoji:'🌑',label:'Shadewing',universe:'Upside Down'},
+  {id:'max',emoji:'🎧',label:'Beatrix',universe:'Upside Down'},
+  {id:'hop',emoji:'🛡️',label:'Ironkeep',universe:'Upside Down'},
+  {id:'hp',emoji:'⚡',label:'Thundermark',universe:'Wizardlands'},
+  {id:'herm',emoji:'📚',label:'Scholara',universe:'Wizardlands'},
+  {id:'ron',emoji:'♟️',label:'Strategos',universe:'Wizardlands'},
+  {id:'luna',emoji:'🌙',label:'Lunara',universe:'Wizardlands'},
+  {id:'nev',emoji:'🌱',label:'Bloomcaster',universe:'Wizardlands'},
+  {id:'nar',emoji:'🍜',label:'Rasenwave',universe:'Shinobi Realm'},
+  {id:'sas',emoji:'⚡',label:'Sharinkai',universe:'Shinobi Realm'},
+  {id:'sak',emoji:'💪',label:'Forceblossom',universe:'Shinobi Realm'},
+  {id:'kak',emoji:'👁️',label:'Veilmaster',universe:'Shinobi Realm'},
+  {id:'rock',emoji:'🥊',label:'Hardstone',universe:'Shinobi Realm'},
+  {id:'anya',emoji:'🧠',label:'Mindreader',universe:'Strix Division'},
+  {id:'loid',emoji:'🎭',label:'Phantom',universe:'Strix Division'},
+  {id:'yor',emoji:'🌸',label:'Thornrose',universe:'Strix Division'},
+  {id:'bond',emoji:'🐾',label:'Futures',universe:'Strix Division'},
+  {id:'frank',emoji:'🔍',label:'Watcher',universe:'Strix Division'},
+];
+function _getAvatarList(){ return (typeof AVATARS!=='undefined'&&AVATARS.length)?AVATARS:_AVATARS_LOCAL; }
+function _getAvatarById(id){ return _getAvatarList().find(a=>a.id===id)||_getAvatarList()[0]; }
+
+function showView(name){['register','login','pending','dashboard'].forEach(v=>{const el=document.getElementById('view-'+v);if(el)el.classList.add('hidden');});const t=document.getElementById('view-'+name);if(t)t.classList.remove('hidden');}
+function showLogin(){showView('login');}
+function showRegister(){showView('register');}
+function doLogout(){clearSession();window.location.href='index.html';}
+
+function loadStudent(s){currentStudent=s;if(s.status==='pending')showView('pending');else if(s.status==='rejected'){showToast('Account rejected. Contact your teacher.','error');doLogout();}else showDashboard();}
+
+async function doLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  if(!email){showToast('Please enter your email','error');return;}
+  const btn=document.querySelector('#view-login .btn-cyan');const orig=btn.textContent;btn.textContent='Seeking hero...';btn.disabled=true;
+  const s=await fetchStudent(email);
+  btn.textContent=orig;btn.disabled=false;
+  if(!s){showToast('Hero not found. Please register first!','error');return;}
+  setSession({role:'student',email:s.email});loadStudent(s);
+}
+
+async function checkApproval(){
+  const sess=getSession();if(!sess)return;
+  showToast('Checking with the wizard...','info');
+  bustStudentCache(sess.email);
+  const s=await fetchStudent(sess.email);
+  if(!s){showToast('Hero not found','error');return;}
+  currentStudent=s;
+  if(s.status==='approved'){loadStudent(s);showToast('Approved! Welcome to the Land of Wit! ⚔️','success');}
+  else showToast('Still pending. Ask your teacher!','info');
+}
+
+function showDashboard(){showView('dashboard');renderProfileBanner();document.getElementById('nav-loot-count').textContent=(currentStudent.lootBags||0)>0?`🎁 ×${currentStudent.lootBags}`:'';  }
+
+function goToAvatarStep(){
+  const name=document.getElementById('reg-name').value.trim();
+  const email=document.getElementById('reg-email').value.trim();
+  const section=document.getElementById('reg-section').value;
+  if(!name||!email||!section){showToast('Fill in all fields, hero!','error');return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showToast('Invalid email format','error');return;}
+  regData={name,email,section};
+  document.getElementById('reg-step-1').classList.add('hidden');
+  document.getElementById('reg-step-2').classList.remove('hidden');
+  renderAvatarGrid('all');
+}
+function backToStep1(){document.getElementById('reg-step-2').classList.add('hidden');document.getElementById('reg-step-1').classList.remove('hidden');}
+function renderAvatarGrid(universe){
+  const grid=document.getElementById('avatar-grid');
+  if(!grid){console.error('avatar-grid not found');return;}
+  const list=_getAvatarList();
+  const avs=universe==='all'?list:list.filter(a=>a.universe===universe);
+  if(!avs.length){grid.innerHTML='<p style="color:#c9b8e8;text-align:center;padding:1rem;">No avatars in this universe.</p>';return;}
+  grid.innerHTML=avs.map(a=>`
+    <div class="avatar-option ${selectedAvatar?.id===a.id?'selected':''}" onclick="selectAvatar('${a.id}',this)" style="background:rgba(74,14,143,.25);border:2px solid rgba(0,170,255,.2);border-radius:12px;padding:.6rem .4rem;text-align:center;cursor:pointer;transition:all .25s;">
+      <div style="font-size:2rem;line-height:1.2;">${a.emoji}</div>
+      <span style="font-size:.6rem;font-weight:800;color:#c9b8e8;margin-top:.25rem;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a.label}</span>
+    </div>`).join('');
+}
+function filterUniverse(u,btn){document.querySelectorAll('#universe-filter .btn').forEach(b=>b.classList.remove('active-u'));btn.classList.add('active-u');renderAvatarGrid(u);}
+function selectAvatar(id,el){selectedAvatar=_getAvatarById(id);document.querySelectorAll('.avatar-option').forEach(e=>e.classList.remove('selected'));el.classList.add('selected');showToast('Champion selected: '+selectedAvatar.label+' '+selectedAvatar.emoji,'success');}
+async function completeRegistration(){
+  if(!selectedAvatar){showToast('Choose a champion first!','error');return;}
+  const btn=document.querySelector('#reg-step-2 .btn-gold');
+  btn.textContent='⚔️ Registering...'; btn.disabled=true;
+  try {
+    const result = await saveStudent({...regData, avatar:selectedAvatar.id});
+    if(!result.ok){
+      btn.textContent='⚔️ Begin Quest!'; btn.disabled=false;
+      showToast(result.error||'Registration failed. Try again.','error');
+      return;
+    }
+    setSession({role:'student', email:regData.email});
+    // Build local student object immediately — don't wait for Sheets
+    currentStudent = {
+      ...regData,
+      avatar: selectedAvatar.id,
+      status: 'pending',
+      xp: 0,
+      lootBags: 0,
+      createdAt: new Date().toISOString()
+    };
+    showToast('Quest application submitted! Awaiting wizard approval 🧙','success');
+    showView('pending');
+  } catch(err) {
+    btn.textContent='⚔️ Begin Quest!'; btn.disabled=false;
+    showToast('Something went wrong. Please try again.','error');
+    console.error('Registration error:', err);
+  }
+}
+
+function renderProfileBanner(){
+  const av=_getAvatarById(currentStudent.avatar);const level=(typeof getLevel==="function")?getLevel(parseInt(currentStudent.xp)||0):{label:"Novice Hero",next:100,progress:0};
+  document.getElementById('profile-banner').innerHTML=`
+    <div class="profile-avatar-lg">${av.emoji}</div>
+    <div style="flex:1;">
+      <h2 style="font-family:'Fredoka One',cursive;font-size:1.2rem;">${currentStudent.name}</h2>
+      <p style="color:#c9b8e8;font-size:.82rem;font-weight:700;">${av.label} · ${av.universe} · Section ${currentStudent.section}</p>
+      <div style="max-width:280px;margin-top:.6rem;">
+        <div style="display:flex;justify-content:space-between;font-size:.75rem;font-weight:700;color:#c9b8e8;margin-bottom:.35rem;">
+          <span style="color:#ffd700;font-family:'Fredoka One',cursive;">${level.label}</span>
+          <span style="color:#7a6090;">${currentStudent.xp||0} XP</span>
+        </div>
+        <div class="xp-bar-track"><div class="xp-bar-fill" style="width:${level.progress}%"></div></div>
+        <p style="font-size:.7rem;color:#7a6090;margin-top:.25rem;">${level.next===Infinity?'MAX LEVEL — LEGENDARY! 🌟':`${level.next-(parseInt(currentStudent.xp)||0)} XP to next rank`}</p>
+      </div>
+    </div>
+    <div style="text-align:right;flex-shrink:0;">
+      <div style="font-family:'Fredoka One',cursive;font-size:2rem;color:#ffd700;">${currentStudent.lootBags||0}</div>
+      <div style="font-size:.72rem;color:#7a6090;font-weight:800;letter-spacing:.1em;">LOOT BAGS</div>
+    </div>`;
+}
+
+function showStudentTab(name){
+  document.querySelectorAll('.page-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s=>s.classList.remove('active'));
+  const sec=document.getElementById('stab-'+name);if(sec)sec.classList.add('active');
+  document.querySelectorAll('.sidebar-item').forEach(item=>{if((item.getAttribute('onclick')||'').includes(`'${name}'`))item.classList.add('active');});
+  if(name==='adventure')renderZoneList('adventure');
+  if(name==='training')renderZoneList('training');
+  if(name==='arena')renderZoneList('arena');
+  if(name==='quests')renderAllQuests();
+  if(name==='journal')renderJournal();
+  if(name==='loot')renderLoot();
+  if(name==='profile')renderProfile();
+}
+
+async function renderZoneList(zone){
+  const container=document.getElementById(zone+'-list');
+  showLoading(container,`Loading ${zone==='adventure'?'adventures':zone==='training'?'training missions':'arena battles'}...`);
+  const [quizzes,myScores]=await Promise.all([fetchQuizzesForStudent(currentStudent.section),getStudentScores(currentStudent.email)]);
+  const filtered=quizzes.filter(q=>{const cat=q.category||'practice';if(zone==='adventure')return cat==='adventure'||cat==='lesson';if(zone==='training')return cat==='practice'||cat==='training';if(zone==='arena')return cat==='assessment'||cat==='arena';return true;});
+  if(!filtered.length){const msgs={adventure:'🗺️ No adventure lessons yet. Your teacher will open new worlds soon!',training:'🐦 No training missions yet. Your teacher will deploy practice camps soon!',arena:'🏟️ No arena battles yet. Your teacher will start the showdown soon!'};container.innerHTML=`<div class="empty-state"><span>${zone==='adventure'?'🗺️':zone==='training'?'🐦':'🏟️'}</span><p>${msgs[zone]}</p></div>`;return;}
+  const icon=zone==='adventure'?'🗺️':zone==='training'?'🐦':'🏟️';
+  container.innerHTML=filtered.map(q=>{
+    const done=myScores.find(s=>s.quizId==q.id);const pct=done?Math.round(done.score/done.total*100):null;
+    const cat=q.category||'practice';const isArena=cat==='assessment'||cat==='arena';
+    const scoreColor=pct>=90?'#00d4aa':pct>=75?'#00aaff':'#ffd700';
+    return `<div class="quest-card ${done?'completed':''}" onclick="${done&&isArena?'void(0)':'startQuest('+q.id+')'}">
+      <div class="quest-header">
+        <div class="quest-icon">${done?(pct===100?'🌟':'✅'):icon}</div>
+        <div class="quest-info"><h3>${q.title}</h3><p>${q.subject||'General'} · ${(q.questions||[]).length} questions · ⏱ ${q.time} min</p></div>
+        ${done?`<div style="text-align:right;">${isArena?'<div style="font-size:.78rem;color:#c9b8e8;font-weight:700;">Submitted ✓</div>':`<div style="font-family:'Fredoka One',cursive;font-size:1.3rem;color:${scoreColor};">${pct}%</div><div style="font-size:.72rem;color:#7a6090;">${done.score}/${done.total}</div>`}</div>`:'<span style="color:#00aaff;font-size:1.4rem;">→</span>'}
+      </div>
+      <div class="quest-meta">
+        <span class="badge ${done?'badge-green':'badge-cyan'}">${done?'✓ DONE':'▶ PLAY'}</span>
+        ${pct===100?'<span class="badge badge-gold">🎁 LOOT EARNED</span>':''}
+        ${isArena&&!done?'<span class="badge badge-magenta">📝 ASSESSMENT</span>':''}
+        <span class="badge badge-gray">+50 XP max</span>
+      </div></div>`;
+  }).join('');
+}
+
+async function renderAllQuests(){
+  const list=document.getElementById('quest-list');showLoading(list,'Loading all quests...');
+  const [quizzes,myScores]=await Promise.all([fetchQuizzesForStudent(currentStudent.section),getStudentScores(currentStudent.email)]);
+  if(!quizzes.length){list.innerHTML='<div class="empty-state"><span>🏰</span><p>No quests yet. Your teacher will deploy missions soon!</p></div>';return;}
+  list.innerHTML=quizzes.map(q=>{
+    const done=myScores.find(s=>s.quizId==q.id);const pct=done?Math.round(done.score/done.total*100):null;
+    const cat=q.category||'practice';const isArena=cat==='assessment'||cat==='arena';
+    const icon=cat==='adventure'||cat==='lesson'?'🗺️':cat==='training'?'🐦':'🏟️';
+    return `<div class="quest-card ${done?'completed':''}" onclick="${done&&isArena?'void(0)':'startQuest('+q.id+')'}">
+      <div class="quest-header">
+        <div class="quest-icon">${done?(pct===100?'🌟':'✅'):icon}</div>
+        <div class="quest-info"><h3>${q.title}</h3><p>${q.subject||'General'} · ${(q.questions||[]).length} questions · ⏱ ${q.time} min</p></div>
+        ${done?`<div style="text-align:right;">${isArena?'<span style="color:#c9b8e8;font-size:.78rem;">Submitted ✓</span>':`<div style="font-family:'Fredoka One',cursive;font-size:1.1rem;color:#00aaff;">${pct}%</div>`}</div>`:'<span style="color:#00aaff;">→</span>'}
+      </div>
+      <div class="quest-meta">
+        <span class="badge ${done?'badge-green':'badge-cyan'}">${done?'✓ DONE':'▶ PLAY'}</span>
+        ${pct===100?'<span class="badge badge-gold">🎁 LOOT</span>':''}
+        <span class="badge badge-gray">+50 XP max</span>
+      </div></div>`;
+  }).join('');
+}
+
+function startQuest(id){setSession({...getSession(),activeQuiz:id});window.location.href=`quiz-play.html?id=${id}`;}
+
+async function renderJournal(){
+  showLoading('journal-list','Loading your legend...');
+  const scores=await getStudentScores(currentStudent.email);
+  const total=scores.length,avg=total?Math.round(scores.reduce((a,b)=>a+(b.score/b.total*100),0)/total):0;
+  const perfects=scores.filter(s=>s.score==s.total).length;
+  const totalXP=scores.reduce((a,b)=>a+Math.round((b.score/b.total)*50),0);
+  document.getElementById('journal-stats').innerHTML=`<div class="stat-card"><div class="stat-value">${total}</div><div class="stat-label">Quests Done</div></div><div class="stat-card"><div class="stat-value">${avg}%</div><div class="stat-label">Avg Score</div></div><div class="stat-card"><div class="stat-value">${perfects}</div><div class="stat-label">Perfect Scores</div></div><div class="stat-card"><div class="stat-value">${totalXP}</div><div class="stat-label">Total XP</div></div>`;
+  const list=document.getElementById('journal-list');
+  if(!scores.length){list.innerHTML='<div class="empty-state"><span>📖</span><p>No quests completed yet. Time to adventure!</p></div>';return;}
+  list.innerHTML=scores.slice().reverse().map(s=>{
+    const pct=Math.round(s.score/s.total*100);const col=pct>=90?'#00d4aa':pct>=75?'#00aaff':pct>=50?'#ffd700':'#ff4444';
+    const cat=s.category||'practice';const isArena=cat==='assessment'||cat==='arena';
+    const icon=cat==='adventure'||cat==='lesson'?'🗺️':cat==='training'?'🐦':'🏟️';
+    if(isArena)return `<div class="journal-entry"><div class="score-circle" style="background:rgba(255,105,180,.1);border:2px solid #ff69b4;color:#ff69b4;font-size:.7rem;">✓</div><div style="flex:1;"><h4 style="font-size:.9rem;font-weight:700;">${icon} ${s.quizTitle||'Assessment'}</h4><p style="font-size:.78rem;color:#c9b8e8;font-weight:600;">🏟️ Arena Battle · ${formatDate(s.createdAt)}</p><p style="font-size:.72rem;color:#7a6090;margin-top:.2rem;">Scores only visible to your teacher.</p></div><div style="text-align:right;"><div style="font-family:'Fredoka One',cursive;font-size:.9rem;color:#00aaff;">+${Math.round((s.score/s.total)*50)} XP</div></div></div>`;
+    return `<div class="journal-entry"><div class="score-circle" style="background:${col}22;border:2px solid ${col};color:${col};">${pct}%</div><div style="flex:1;"><h4 style="font-size:.9rem;font-weight:700;">${icon} ${s.quizTitle||'Quest'}</h4><p style="font-size:.78rem;color:#c9b8e8;font-weight:600;">${s.score}/${s.total} correct · ${formatDate(s.createdAt)}</p></div><div style="text-align:right;"><div style="font-family:'Fredoka One',cursive;font-size:.9rem;color:#00aaff;">+${Math.round((s.score/s.total)*50)} XP</div>${s.score==s.total?'<div style="font-size:.7rem;color:#ffd700;">🎁 Loot!</div>':''}</div></div>`;
+  }).join('');
+}
+
+function renderLoot(){
+  const bags=parseInt(currentStudent.lootBags)||0;
+  const lootHistory=JSON.parse(localStorage.getItem(`s_loot_${currentStudent.email}`)||'[]');
+  document.getElementById('loot-content').innerHTML=`<div style="text-align:center;margin-bottom:2rem;"><div style="font-family:'Fredoka One',cursive;font-size:4rem;color:#ffd700;margin-bottom:.5rem;">${bags}</div><p style="color:#c9b8e8;font-weight:700;">Loot Bags Available</p><p style="font-size:.8rem;color:#7a6090;margin-top:.5rem;">Get perfect scores to earn loot!</p>${bags>0?`<button class="btn btn-gold" onclick="showLootModal()" style="margin-top:1.25rem;">🎁 Open a Loot Bag!</button>`:`<button class="btn btn-ghost" style="margin-top:1.25rem;cursor:not-allowed;" disabled>No Loot Bags Yet</button>`}</div>${lootHistory.length?`<h3 style="font-family:'Fredoka One',cursive;font-size:1rem;color:#c9b8e8;margin-bottom:1rem;">📜 LOOT HISTORY</h3><div class="loot-grid">${lootHistory.map(l=>`<div class="loot-item"><span class="loot-icon">${l.emoji}</span><h4 style="font-size:.82rem;font-weight:800;">${l.name}</h4><p class="badge ${l.rarity==='Rare'?'badge-gold':l.rarity==='Uncommon'?'badge-cyan':'badge-gray'}" style="margin:.3rem auto;display:inline-block;">${l.rarity}</p><p style="font-size:.72rem;color:#7a6090;">${formatDate(l.date)}</p></div>`).join('')}</div>`:''}`;
+}
+
+function showLootModal(){document.getElementById('loot-result').classList.add('hidden');document.getElementById('open-loot-btn').classList.remove('hidden');document.getElementById('loot-bag-anim').textContent='🎁';document.getElementById('loot-modal').classList.add('active');}
+
+async function openLootBag(){
+  const bags=parseInt(currentStudent.lootBags)||0;if(bags<=0){showToast('No loot bags!','error');return;}
+  document.getElementById('open-loot-btn').classList.add('hidden');
+  const bag=document.getElementById('loot-bag-anim');let i=0;const emojis=['🎁','✨','🌟','💫','🎊','⚡','🏆'];
+  const shake=setInterval(()=>{bag.textContent=emojis[i++%emojis.length];bag.style.transform=`scale(${1+Math.random()*.3}) rotate(${(Math.random()-.5)*20}deg)`;},120);
+  setTimeout(async()=>{
+    clearInterval(shake);bag.style.transform='scale(1)';const prize=rollLoot();
+    bag.textContent=prize.emoji;document.getElementById('loot-prize-icon').textContent=prize.emoji;document.getElementById('loot-prize-name').textContent=prize.name;
+    const re=document.getElementById('loot-prize-rarity');re.textContent=prize.rarity;re.className=`badge ${prize.rarity==='Rare'?'badge-gold':prize.rarity==='Uncommon'?'badge-cyan':'badge-gray'}`;
+    document.getElementById('loot-result').classList.remove('hidden');
+    const newBags=bags-1;currentStudent.lootBags=newBags;
+    await updateStudent(currentStudent.email,{lootBags:newBags});
+    const hist=JSON.parse(localStorage.getItem(`s_loot_${currentStudent.email}`)||'[]');
+    hist.push({...prize,date:new Date().toISOString()});localStorage.setItem(`s_loot_${currentStudent.email}`,JSON.stringify(hist));
+    document.getElementById('nav-loot-count').textContent=newBags>0?`🎁 ×${newBags}`:'';
+    renderProfileBanner();showToast(`You got: ${prize.name}! Excellence is a Habit! 🌟`,'success');
+  },1500);
+}
+
+function renderProfile(){
+  const av=_getAvatarById(currentStudent.avatar),level=(typeof getLevel==="function")?getLevel(parseInt(currentStudent.xp)||0):{label:"Novice Hero",next:100,progress:0};
+  document.getElementById('profile-content').innerHTML=`<div class="glass-card" style="max-width:480px;"><div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:2rem;"><div class="profile-avatar-lg" style="width:90px;height:90px;font-size:3rem;">${av.emoji}</div><div><h3 style="font-family:'Fredoka One',cursive;font-size:1.2rem;">${currentStudent.name}</h3><p style="color:#c9b8e8;font-size:.82rem;font-weight:700;">Class ${currentStudent.section}</p><p style="color:#ffd700;font-size:.82rem;margin-top:.25rem;font-weight:800;">⭐ ${level.label}</p></div></div><div class="form-group"><p class="form-label">Champion</p><p style="font-weight:700;">${av.emoji} ${av.label} — ${av.universe}</p></div><div class="form-group"><p class="form-label">Email</p><p style="font-weight:700;">${currentStudent.email}</p></div><div class="form-group"><p class="form-label">Total XP</p><p style="font-family:'Fredoka One',cursive;font-size:1.2rem;color:#00aaff;">${currentStudent.xp||0} XP</p></div><div class="form-group"><p class="form-label">Loot Bags</p><p style="font-family:'Fredoka One',cursive;font-size:1.2rem;color:#ffd700;">${currentStudent.lootBags||0} 🎁</p></div></div>`;
+}
+
+(async function init(){
+  const sess=getSession();
+  if(sess?.role==='student'&&sess.email){
+    showView('login');
+    document.getElementById('view-login').innerHTML=`<nav class="nav"><div class="nav-logo">PROJECT SOLOMON<span>HERO PORTAL</span></div><a href="index.html" class="nav-btn">← Back to Land of Wit</a></nav><div style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem;min-height:70vh;"><div class="spinner"></div><p style="color:#c9b8e8;font-size:.9rem;font-weight:700;">Loading your hero profile...</p></div>`;
+    const s=await fetchStudent(sess.email);
+    if(s)loadStudent(s);
+    else{clearSession();showView('register');showToast('Session expired. Please sign in again.','error');}
+  }
+})();
+</script>
+</body>
+</html>
